@@ -3,22 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Standard Meta Tags -->
     <title>Bible Reading Plan Tracker — Complete Edition</title>
-    <meta name="description" content="A complete, customizable 365-day Bible reading tracker with built-in timers, progress maps, and note-taking.">
-    
-    <!-- Open Graph (Facebook, Discord, iMessage) -->
-    <meta property="og:title" content="Bible Reading Plan Tracker">
-    <meta property="og:description" content="Track your daily Bible reading, view your streak, and take notes.">
-    <meta property="og:type" content="website">
-    
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Bible Reading Plan Tracker">
-    <meta name="twitter:description" content="Track your daily Bible reading, view your streak, and take notes.">
-    
-    <style>
     <style>
         :root {
             --bg-primary: #1a1a2e;
@@ -43,16 +28,6 @@
             --text-secondary: #666666;
             --accent: #d4a700;
             --border: rgba(0, 0, 0, 0.1);
-        }
-
-        .sepia-mode {
-            --bg-primary: #f4ecd8;
-            --bg-secondary: #faf6eb;
-            --bg-card: rgba(139, 90, 43, 0.05);
-            --text-primary: #5c4b37;
-            --text-secondary: #8b7355;
-            --accent: #b8860b;
-            --border: rgba(139, 90, 43, 0.15);
         }
 
         * {
@@ -314,15 +289,6 @@
 
         .stat-card.streak .value {
             color: #ff6b35;
-        }
-
-        .stat-card .badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 10px;
         }
 
         /* Progress Section */
@@ -1649,36 +1615,6 @@
             left: 26px;
         }
 
-        .theme-options {
-            display: flex;
-            gap: 10px;
-        }
-
-        .theme-option {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .theme-option.active {
-            border-color: var(--accent);
-        }
-
-        .theme-option.dark {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-        }
-
-        .theme-option.light {
-            background: linear-gradient(135deg, #f5f5f5, #ffffff);
-        }
-
-        .theme-option.sepia {
-            background: linear-gradient(135deg, #f4ecd8, #faf6eb);
-        }
-
         .select-input {
             padding: 10px 15px;
             border-radius: 10px;
@@ -2020,6 +1956,7 @@
                 </button>
             </div>
             <div class="nav-actions">
+                <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Theme">☀️</button>
                 <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
             </div>
         </div>
@@ -2444,13 +2381,9 @@
                     <h3>🎨 Appearance</h3>
                     <div class="setting-item">
                         <div class="setting-label">
-                            <span>Theme</span>
+                            <span>Light Mode</span>
                         </div>
-                        <div class="theme-options">
-                            <div class="theme-option dark active" onclick="setTheme('dark')"></div>
-                            <div class="theme-option light" onclick="setTheme('light')"></div>
-                            <div class="theme-option sepia" onclick="setTheme('sepia')"></div>
-                        </div>
+                        <div class="toggle" id="themeToggle" onclick="toggleTheme()"></div>
                     </div>
                     <div class="setting-item">
                         <div class="setting-label">
@@ -2778,6 +2711,12 @@
             if (saved) {
                 const parsed = JSON.parse(saved);
                 state = { ...state, ...parsed };
+
+                // Fix any legacy themes that may have been saved
+                if (state.settings && state.settings.theme === 'sepia') {
+                    state.settings.theme = 'dark';
+                }
+
                 if (state.startDate) {
                     state.startDate = new Date(state.startDate);
                 }
@@ -3879,16 +3818,21 @@
 
         // ===== SETTINGS =====
         function applySettings() {
-            // Theme
-            document.body.classList.remove('light-mode', 'sepia-mode');
-            if (state.settings.theme === 'light') {
-                document.body.classList.add('light-mode');
-            } else if (state.settings.theme === 'sepia') {
-                document.body.classList.add('sepia-mode');
+            // Theme setup
+            const isLightMode = state.settings.theme === 'light';
+            document.body.classList.toggle('light-mode', isLightMode);
+
+            // Update top nav toggle button
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.textContent = isLightMode ? '🌙' : '☀️';
             }
-            
-            document.querySelectorAll('.theme-option').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.theme-option.${state.settings.theme}`)?.classList.add('active');
+
+            // Update settings modal theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.classList.toggle('active', isLightMode);
+            }
 
             // Font size
             const sizes = { small: '14px', normal: '16px', large: '18px' };
@@ -3901,8 +3845,8 @@
             }
         }
 
-        function setTheme(theme) {
-            state.settings.theme = theme;
+        function toggleTheme() {
+            state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light';
             saveState();
             applySettings();
         }
