@@ -1,0 +1,8 @@
+{
+  "name": "bible-tracker-ai",
+  "version": "1.0.0",
+  "description": "Bible Tracker with Gemini AI",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  }
+}
