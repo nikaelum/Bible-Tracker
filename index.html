@@ -374,26 +374,424 @@
         /* Confetti */
         .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 3000; }
         .confetti-piece { position: absolute; width: 10px; height: 10px; top: -10px; animation: fall 3s ease-out forwards; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-
-        /* Missing Keyframes */
+        
+        /* Keyframes */
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
         .loading-dots::after { content: ''; animation: dots 1.5s steps(5, end) infinite; }
         @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
 
-        /* Responsive */
+        /* ===== iPhone 16 Pro Optimizations (393 x 852pt) ===== */
+
+        /* Base safe area handling for all modern iPhones */
+        @supports (padding: env(safe-area-inset-top)) {
+            .app-header {
+                padding-top: calc(16px + env(safe-area-inset-top));
+            }
+        }
+
+        /* Tablets and small desktops */
+        @media (max-width: 768px) {
+            .chat-window {
+                width: calc(100vw - 48px);
+            }
+        }
+
+        /* All phones */
         @media (max-width: 480px) {
-            .app-header { padding: 24px 16px 16px; }
-            .header-titles h1 { font-size: 1.8rem; }
-            .timer-display { font-size: 4rem; }
-            .timer-btn { width: 60px; height: 60px; font-size: 1.4rem; }
-            .chat-window { width: calc(100vw - 32px); right: 16px; bottom: calc(140px + env(safe-area-inset-bottom)); }
-            .chat-fab { right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); width: 52px; height: 52px; font-size: 1.3rem; }
-            .tab-nav { width: calc(100% - 16px); padding: 6px; }
-            .tab-btn { font-size: 0.55rem; padding: 8px 0; min-width: 55px; }
+            .app-header {
+                padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+            }
+            .header-titles h1 {
+                font-size: 1.8rem;
+            }
+            .header-titles .subtitle {
+                font-size: 0.72rem;
+                letter-spacing: 1.5px;
+            }
+            .main-content {
+                padding: 0 16px calc(120px + env(safe-area-inset-bottom));
+            }
+
+            /* Stats grid - 2 columns on phone */
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .stat-card {
+                padding: 16px 8px;
+            }
+            .stat-card .value {
+                font-size: 1.6rem;
+            }
+            .stat-card .icon {
+                font-size: 1.3rem;
+                margin-bottom: 6px;
+            }
+
+            /* Cards */
+            .glass-card {
+                padding: 20px;
+                border-radius: 16px;
+                margin-bottom: 20px;
+            }
+
+            /* Today section */
+            .today-section {
+                padding: 24px 16px;
+            }
+            .today-reading {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+            .today-section h2 {
+                font-size: 0.85rem;
+            }
+            .today-badges {
+                margin-bottom: 12px;
+            }
+            .today-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .today-actions .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 14px 20px;
+            }
+
+            /* Progress */
+            .progress-percentage {
+                font-size: 1.5rem;
+            }
+            .progress-stats {
+                font-size: 0.65rem;
+                gap: 8px;
+            }
+
+            /* Timer */
+            .timer-display {
+                font-size: 3.5rem;
+                margin: 24px 0;
+            }
+            .timer-section {
+                padding: 28px 16px;
+            }
+            .timer-controls {
+                gap: 16px;
+                margin: 24px 0;
+            }
+            .timer-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            .timer-passage-info {
+                padding: 16px;
+                margin: 16px 0;
+            }
+            .timer-passage-title {
+                font-size: 1.2rem;
+            }
+            .timer-passage-meta {
+                gap: 12px;
+                font-size: 0.7rem;
+            }
+            .timer-header h3 {
+                font-size: 0.85rem;
+            }
+            .timer-status {
+                font-size: 0.65rem;
+                padding: 5px 12px;
+            }
+            .timer-additional-actions {
+                gap: 10px;
+            }
+            .timer-additional-actions .btn {
+                padding: 10px 14px;
+                font-size: 0.7rem;
+            }
+            .timer-comparison {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                padding: 16px;
+                margin-top: 20px !important;
+            }
+            .timer-comparison-item .value {
+                font-size: 1.1rem;
+            }
+            .timer-comparison-item .label {
+                font-size: 0.65rem;
+            }
+
+            /* Bottom Tab Nav */
+            .tab-nav {
+                width: calc(100% - 16px);
+                padding: 6px;
+                bottom: calc(12px + env(safe-area-inset-bottom));
+                border-radius: 28px;
+            }
+            .tab-btn {
+                font-size: 0.5rem;
+                padding: 8px 0;
+                min-width: 50px;
+                gap: 3px;
+            }
+            .tab-btn .tab-icon {
+                font-size: 1.05rem;
+            }
+
+            /* Floating Timer */
+            .floating-timer {
+                bottom: calc(80px + env(safe-area-inset-bottom));
+                left: 12px;
+                right: 12px;
+                min-width: auto;
+                padding: 14px 16px;
+                border-radius: 16px;
+            }
+            .floating-timer-display {
+                font-size: 1.6rem;
+            }
+            .floating-timer-passage {
+                font-size: 0.7rem;
+            }
+
+            /* Chat */
+            .chat-fab {
+                right: 16px;
+                bottom: calc(76px + env(safe-area-inset-bottom));
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            .chat-window {
+                right: 12px;
+                left: 12px;
+                width: auto;
+                bottom: calc(136px + env(safe-area-inset-bottom));
+                height: 420px;
+                max-height: calc(100vh - 200px);
+                border-radius: 16px;
+            }
+            .chat-header {
+                padding: 12px 16px;
+                font-size: 0.75rem;
+            }
+            .chat-msg {
+                font-size: 0.88rem;
+                padding: 10px 14px;
+            }
+            .chat-input-row {
+                padding: 12px;
+            }
+            .chat-input-row input {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+
+            /* Reading List */
+            .reading-item {
+                padding: 14px 12px;
+                gap: 12px;
+            }
+            .day-number {
+                width: 38px;
+                height: 38px;
+                font-size: 0.8rem;
+            }
+            .reading-passage {
+                font-size: 0.95rem;
+            }
+            .reading-meta {
+                font-size: 0.65rem;
+                gap: 10px;
+            }
+            .checkbox {
+                width: 28px;
+                height: 28px;
+                font-size: 0.85rem;
+            }
+            .reading-actions .icon-btn {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 0.8rem !important;
+            }
+            .reading-controls {
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            .filter-btn {
+                padding: 8px 14px;
+                font-size: 0.65rem;
+            }
+
+            /* Bible Map */
+            .book-block {
+                padding: 5px 10px;
+                font-size: 0.65rem;
+            }
+            .bible-map {
+                gap: 6px;
+                padding: 12px;
+            }
+
+            /* Heatmap */
+            .heatmap-cell {
+                width: 10px;
+                height: 10px;
+            }
+            .heatmap-wrapper {
+                padding: 12px;
+            }
+
+            /* Achievements */
+            .ach-card {
+                padding: 16px;
+                gap: 14px;
+            }
+            .ach-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.6rem;
+            }
+            .ach-details h4 {
+                font-size: 1.05rem;
+            }
+            .ach-details p {
+                font-size: 0.7rem;
+            }
+
+            /* Modals */
+            .modal-content {
+                padding: 32px 20px calc(32px + env(safe-area-inset-bottom));
+                border-radius: 24px 24px 0 0;
+            }
+            .modal-title h2 {
+                font-size: 2rem;
+            }
+            .modal-close {
+                top: 20px;
+                right: 20px;
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+
+            /* Plan options in modals */
+            .plan-option {
+                padding: 16px;
+            }
+            .plan-option h4 {
+                font-size: 1rem;
+            }
+
+            /* Streak banner */
+            .streak-banner {
+                padding: 12px 16px;
+                gap: 12px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+            }
+            .streak-info strong {
+                font-size: 1rem;
+            }
+            .streak-info p {
+                font-size: 0.75rem;
+            }
+            .streak-val {
+                font-size: 1rem;
+            }
+
+            /* Review chart */
+            .section-header {
+                margin-bottom: 12px;
+                margin-top: 8px;
+            }
+            .section-header h3 {
+                font-size: 1.2rem;
+            }
+
+            /* Buttons general */
+            .btn {
+                padding: 11px 20px;
+                font-size: 0.78rem;
+            }
+            .btn-small {
+                padding: 8px 14px;
+                font-size: 0.68rem;
+            }
+
+            /* Context box */
+            .today-context {
+                padding: 16px;
+                font-size: 0.88rem;
+                margin-bottom: 20px;
+            }
+
+            /* Icon buttons */
+            .icon-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+
+            /* Header controls */
+            .header-controls {
+                gap: 6px;
+            }
+        }
+
+        /* Extra small phones (iPhone SE etc) */
+        @media (max-width: 375px) {
+            .header-titles h1 {
+                font-size: 1.5rem;
+            }
+            .timer-display {
+                font-size: 3rem;
+            }
+            .today-reading {
+                font-size: 1.3rem;
+            }
+            .stat-card .value {
+                font-size: 1.4rem;
+            }
+            .tab-btn {
+                min-width: 44px;
+                font-size: 0.45rem;
+            }
+            .tab-btn .tab-icon {
+                font-size: 0.95rem;
+            }
+            .timer-btn {
+                width: 52px;
+                height: 52px;
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Landscape on phones */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main-content {
+                padding-bottom: calc(100px + env(safe-area-inset-bottom));
+            }
+            .tab-nav {
+                bottom: calc(8px + env(safe-area-inset-bottom));
+                padding: 4px;
+            }
+            .tab-btn {
+                padding: 6px 0;
+            }
+            .timer-display {
+                font-size: 3rem;
+                margin: 16px 0;
+            }
+            .modal-content {
+                max-height: 85vh;
+            }
         }
     </style>
 </head>
@@ -583,13 +981,15 @@
                 </div>
             </div>
 
-            <!-- Timer History injected here -->
+            <!-- Timer History -->
             <div class="glass-card">
                 <div class="section-header" style="margin-top:0;">
                     <h3 class="serif">📜 Recent Sessions</h3>
                 </div>
                 <div class="timer-history-list" id="timerHistoryList">
-                    <p style="text-align: center; color: var(--txt3); padding: 30px; font-family:var(--font-sans);">No reading sessions yet. Start the timer to track your reading!</p>
+                    <p style="text-align: center; color: var(--txt3); padding: 30px; font-family:var(--font-sans);">
+                        No reading sessions yet. Start the timer to track your reading!
+                    </p>
                 </div>
             </div>
         </section>
