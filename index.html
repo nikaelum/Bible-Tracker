@@ -632,33 +632,62 @@
 
         /* Paragraphs from API.Bible */
         .bible-text-area p {
-            margin-bottom: 0; margin-top: 0;
-            text-indent: 1.6em;
+            margin-bottom: 0.6em;
+            margin-top: 0;
+            text-indent: 0;
         }
-        .bible-text-area p:first-child { text-indent: 0; }
 
         /* Section headings that API returns */
         .bible-text-area h3, .bible-text-area h4 {
-            font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 2px; color: var(--txt3);
-            margin: 28px 0 8px; text-indent: 0;
+            font-family: var(--font-sans);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--txt3);
+            margin: 32px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--card-brd);
+        }
+        .bible-text-area h3:first-child,
+        .bible-text-area h4:first-child {
+            margin-top: 0;
         }
 
         /* Verse numbers */
         .bible-text-area .v {
-            font-size: 0.58em; vertical-align: super; color: var(--pri);
-            font-weight: 700; margin-right: 2px; margin-left: 1px;
-            font-family: var(--font-sans); letter-spacing: 0;
-            line-height: 0; opacity: 0.85;
+            font-size: 0.6em;
+            vertical-align: super;
+            color: var(--pri);
+            font-weight: 700;
+            margin-right: 3px;
+            margin-left: 2px;
+            font-family: var(--font-sans);
+            letter-spacing: 0;
+            line-height: 0;
+            opacity: 0.85;
+            user-select: none;
             transition: opacity 0.2s;
         }
         .bible-text-area .v:hover { opacity: 1; }
 
-        /* Drop-cap on first verse */
-        .bible-text-area > p:first-of-type::first-letter {
-            font-size: 3.2em; font-weight: 600; float: left;
-            line-height: 0.8; margin-right: 6px; margin-top: 8px;
-            color: var(--pri); font-family: 'Cormorant Garamond', Georgia, serif;
+        /* Drop-cap on chapter start (only if first child is a <p>) */
+        .bible-text-area > p:first-child::first-letter {
+            font-size: 2.8em;
+            font-weight: 600;
+            float: left;
+            line-height: 0.85;
+            margin-right: 6px;
+            margin-top: 4px;
+            color: var(--pri);
+            font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+        /* Suppress drop-cap when first child is a heading */
+        .bible-text-area > h3:first-child + p::first-letter,
+        .bible-text-area > h4:first-child + p::first-letter {
+            font-size: inherit;
+            float: none;
+            margin: 0;
         }
 
         .bible-copyright {
@@ -1372,10 +1401,16 @@
             let content = data.content || '';
 
             // Clean up API.Bible HTML formatting
+            // Step 1: Convert verse-number spans to safe placeholders
             content = content
-                .replace(/<span[^>]*data-number="(\d+)"[^>]*>/g, '<span class="v">$1 </span>')
-                .replace(/<\/span>/g, '')
-                .replace(/<p[^>]*class="[^"]*"[^>]*>/g, '<p>')
+                .replace(/<span[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g, '\u00AB$1\u00BB')
+                // Step 2: Strip all remaining span tags (open + close)
+                .replace(/<\/?span[^>]*>/g, '')
+                // Step 3: Restore verse numbers with correct markup
+                .replace(/\u00AB(\d+)\u00BB/g, '<span class="v">$1</span> ')
+                // Step 4: Normalise paragraph tags (keep structure, drop classes)
+                .replace(/<p[^>]*>/g, '<p>')
+                // Step 5: Collapse excessive whitespace / newlines
                 .replace(/\n{3,}/g, '\n\n');
 
             textArea.classList.remove('loading');
