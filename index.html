@@ -1263,9 +1263,6 @@
         { id: "speed_reader", icon: "⚡", name: "Speed Reader", desc: "Beat estimate 5 times", check: (s) => s.fasterSessions >= 5 },
     ];
 
-    // ===== TAB ORDER FOR SWIPE NAVIGATION (Feature 5) =====
-    const tabOrder = ['dashboard', 'timer', 'bible-reader', 'chat-tab', 'readings', 'map', 'achievements', 'review'];
-
     let state = {
         startDate: null, planType: 'oneyear', readingPlan: [], sessions: [],
         settings: { theme: 'light', fontSize: 'normal', showFloatingTimer: true, readingSpeed: 'normal' },
@@ -1289,7 +1286,7 @@
             document.getElementById('startDateInput').valueAsDate = new Date();
             openModal('startModal');
         } else { renderAll(); restoreTimerIfActive(); }
-        applySettings(); populateBibleBookSelector(); initSwipeNavigation();
+        applySettings(); populateBibleBookSelector();
         setInterval(updateAllTimerDisplays, 100);
         initHighlightToAsk();
     }
@@ -1573,36 +1570,6 @@
             switchTab('chat-tab');
             setTimeout(() => chatInput.focus(), 300);
         }
-    }
-
-    // ===== SWIPE NAVIGATION (Feature 5) =====
-    function initSwipeNavigation() {
-        const mc = document.getElementById('mainContent');
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        mc.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, { passive: true });
-
-        mc.addEventListener('touchend', (e) => {
-            const deltaX = e.changedTouches[0].screenX - touchStartX;
-            const deltaY = e.changedTouches[0].screenY - touchStartY;
-
-            // Only trigger if horizontal swipe is dominant and past threshold
-            if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-                const activeTab = document.querySelector('.tab-panel.active')?.id;
-                const currentIdx = tabOrder.indexOf(activeTab);
-                if (currentIdx === -1) return;
-
-                if (deltaX < 0 && currentIdx < tabOrder.length - 1) {
-                    switchTab(tabOrder[currentIdx + 1]);
-                } else if (deltaX > 0 && currentIdx > 0) {
-                    switchTab(tabOrder[currentIdx - 1]);
-                }
-            }
-        }, { passive: true });
     }
 
     // ===== VOICE-TO-TEXT (Feature 6) =====
