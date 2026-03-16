@@ -102,7 +102,7 @@
             z-index: 100; width: calc(100% - 32px); max-width: 700px;
             border-radius: var(--rad-pill); box-shadow: var(--sh-glow); padding: 8px;
             justify-content: space-between; overflow-x: auto; -webkit-overflow-scrolling: touch;
-            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease;
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
             will-change: transform;
         }
         .tab-nav.nav-hidden {
@@ -110,45 +110,26 @@
             opacity: 0;
             pointer-events: none;
         }
+        .nav-pull-tab {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 5px; border-radius: 5px 5px 0 0;
+            background: var(--txt3); opacity: 0; z-index: 101;
+            transition: opacity 0.3s ease; pointer-events: none;
+        }
+        .nav-pull-tab.visible { opacity: 0.4; }
         .tab-nav.nav-hidden {
             transform: translateX(-50%) translateY(calc(100% + 40px));
             opacity: 0;
             pointer-events: none;
         }
+        .nav-pull-tab {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 5px; border-radius: 5px 5px 0 0;
+            background: var(--txt3); opacity: 0; z-index: 101;
+            transition: opacity 0.3s ease; pointer-events: none;
+        }
+        .nav-pull-tab.visible { opacity: 0.4; }
         /* Small peek handle visible when nav is hidden */
-        .nav-peek-handle {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 99;
-            width: 60px;
-            height: 24px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-brd);
-            border-bottom: none;
-            border-radius: 12px 12px 0 0;
-            backdrop-filter: var(--glass-blur);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .nav-peek-handle.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .nav-peek-handle::before {
-            content: '';
-            width: 28px;
-            height: 3px;
-            background: var(--pri);
-            border-radius: 2px;
-            opacity: 0.6;
-        }
         .tab-nav::-webkit-scrollbar { display: none; }
         .tab-btn {
             flex: 1; min-width: 60px; padding: 10px 0; border: none; background: transparent;
@@ -1167,8 +1148,7 @@
         </button>
     </nav>
 
-    <!-- Nav peek handle (shown when nav is hidden) -->
-    <div class="nav-peek-handle" id="navPeekHandle" onclick="showTabNav()" title="Show navigation"></div>
+    <div class="nav-pull-tab" id="navPullTab"></div>
 
     <!-- Floating Timer -->
     <div class="floating-timer" id="floatingTimer">
@@ -1552,83 +1532,19 @@
         }, { passive: true });
     })();
 
-    // ===== SCROLL-TO-HIDE NAV =====
-    function initScrollHideNav() {
+    // ===== NAV TOGGLE (bottom-edge tap) =====
+    function initNavToggle() {
         const nav = document.getElementById('tabNav') || document.querySelector('.tab-nav');
+        const pullTab = document.getElementById('navPullTab');
         if (!nav) return;
-
-        let lastScrollY = window.scrollY;
-        let lastDirection = 'up';
-        let ticking = false;
-        let hideTimeout = null;
-        const SCROLL_THRESHOLD = 8;
-        const TOUCH_SWIPE_THRESHOLD = 30;
-
-        window.addEventListener('scroll', () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    const currentY = window.scrollY;
-                    const delta = currentY - lastScrollY;
-                    if (Math.abs(delta) > SCROLL_THRESHOLD) {
-                        if (delta > 0 && lastDirection !== 'down') {
-                            lastDirection = 'down'; hideNav();
-                        } else if (delta < 0 && lastDirection !== 'up') {
-                            lastDirection = 'up'; showNav();
-                        }
-                    }
-                    if (currentY <= 10) showNav();
-                    lastScrollY = currentY;
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        }, { passive: true });
-
-        let touchStartY = 0;
-        let touchStartTime = 0;
-
+        const EDGE_ZONE = 30;
         document.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-            touchStartTime = Date.now();
-            // Tap bottom edge escape hatch
-            const screenH = window.innerHeight;
-            if (e.touches[0].clientY > screenH - 25 && nav.classList.contains('nav-hidden')) {
-                showNav();
+            const touchY = e.touches[0].clientY;
+            if (touchY > window.innerHeight - EDGE_ZONE) {
+                nav.classList.toggle('nav-hidden');
+                if (pullTab) pullTab.classList.toggle('visible', nav.classList.contains('nav-hidden'));
             }
         }, { passive: true });
-
-        document.addEventListener('touchend', (e) => {
-            const deltaY = e.changedTouches[0].clientY - touchStartY;
-            const deltaTime = Date.now() - touchStartTime;
-            if (deltaTime < 400 && Math.abs(deltaY) > TOUCH_SWIPE_THRESHOLD) {
-                if (deltaY > 0) hideNav(); else showNav();
-            }
-        }, { passive: true });
-
-        function resetIdleShow() {
-            clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => {
-                const atBottom = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 50;
-                if (!atBottom) showNav();
-            }, 4000);
-        }
-
-        function hideNav() {
-            nav.classList.add('nav-hidden');
-            const floater = document.getElementById('floatingTimer');
-            if (floater) floater.classList.add('nav-hidden-adjust');
-            resetIdleShow();
-        }
-
-        function showNav() {
-            nav.classList.remove('nav-hidden');
-            const floater = document.getElementById('floatingTimer');
-            if (floater) floater.classList.remove('nav-hidden-adjust');
-            clearTimeout(hideTimeout);
-        }
-
-        window.hideTabNav = hideNav;
-        window.showTabNav = showNav;
     }
 
     function init() {
@@ -1637,7 +1553,7 @@
             document.getElementById('startDateInput').valueAsDate = new Date();
             openModal('startModal');
         } else { renderAll(); restoreTimerIfActive(); }
-        applySettings(); populateBibleBookSelector(); initScrollHideNav();
+        applySettings(); populateBibleBookSelector(); initNavToggle();
         setInterval(updateAllTimerDisplays, 100);
         initHighlightToAsk();
     }
