@@ -61,17 +61,24 @@ export default async function handler(req, res) {
         const keyStart = trimmedKey ? trimmedKey.substring(0, 8) : 'NOT SET';
         const keyEnd   = trimmedKey ? trimmedKey.substring(trimmedKey.length - 4) : '';
 
-        // Live test against API.Bible - tells you right away if the key works
+        // Live test + list all available Bibles on your account
         let liveApiTest = 'skipped - no key configured';
+        let availableBibles = [];
         if (trimmedKey) {
             try {
                 const testRes = await fetch(
-                    'https://api.scripture.api.bible/v1/bibles?language=eng',
+                    'https://rest.api.bible/v1/bibles',
                     { headers: { 'api-key': trimmedKey } }
                 );
                 const body = await testRes.text();
                 if (testRes.ok) {
                     liveApiTest = 'SUCCESS ' + testRes.status + ' - key is valid and working!';
+                    try {
+                        const parsed = JSON.parse(body);
+                        availableBibles = (parsed.data || []).map(function(b) {
+                            return { id: b.id, name: b.nameLocal || b.name, abbreviation: b.abbreviationLocal || b.abbreviation };
+                        });
+                    } catch (_) {}
                 } else {
                     liveApiTest = 'FAILED ' + testRes.status + ' - ' + body.substring(0, 300);
                 }
@@ -87,12 +94,15 @@ export default async function handler(req, res) {
             keyStart: keyStart,
             keyEnd: keyEnd,
             liveApiTest: liveApiTest,
-            nltId: process.env.NLT_BIBLE_ID || 'using default: d6e14a625393b4da-01',
-            nivId: process.env.NIV_BIBLE_ID || 'using default: 78a9f6124f344018-01',
-            kjvId: process.env.KJV_BIBLE_ID || 'using default: de4e12af7f28f599-02',
-            esvId: process.env.ESV_BIBLE_ID || 'using default: 01b29f4b342acc35-01',
-            endpoint: 'https://api.scripture.api.bible/v1',
-            tip: 'If liveApiTest shows FAILED 401: delete BIBLE_API_KEY in Vercel and re-enter it manually. Your key starts with a dash (-) which is valid but can be dropped when copy-pasting.'
+            availableBibles: availableBibles,
+            currentSettings: {
+                nltId: process.env.NLT_BIBLE_ID || 'default: d6e14a625393b4da-01',
+                nivId: process.env.NIV_BIBLE_ID || 'default: 78a9f6124f344018-01',
+                kjvId: process.env.KJV_BIBLE_ID || 'default: de4e12af7f28f599-02',
+                esvId: process.env.ESV_BIBLE_ID || 'default: 01b29f4b342acc35-01'
+            },
+            endpoint: 'https://rest.api.bible/v1',
+            tip: 'Check availableBibles to see every Bible your account can access, with the exact IDs to use.'
         });
     }
 
@@ -159,7 +169,7 @@ async function tryApiBible(apiKey, version, book, chapter) {
     }
 
     const chapterId = bookId + '.' + chapter;
-    const apiUrl = 'https://api.scripture.api.bible/v1/bibles/' + bibleId + '/chapters/' + chapterId + '?content-type=html&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true';
+    const apiUrl = 'https://rest.api.bible/v1/bibles/' + bibleId + '/chapters/' + chapterId + '?content-type=html&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true';
 
     try {
         const response = await fetch(apiUrl, {
