@@ -320,58 +320,7 @@
         .chat-msg.ai { align-self: flex-start; background: var(--input-bg); border: 1px solid var(--card-brd); color: var(--txt); border-bottom-left-radius: 4px; }
         .chat-msg.error { background: rgba(184,92,92,0.1); color: var(--danger); border: 1px solid var(--danger); text-align: center; font-size: 0.8rem; align-self: center; }
 
-        /* ===== BIBLE READER TAB ===== */
-        .bible-reader-toolbar {
-            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-            margin-bottom: 16px; padding: 16px;
-            background: var(--input-bg); border-radius: var(--rad-sm);
-            border: 1px solid var(--card-brd);
-        }
-        .bible-reader-toolbar select {
-            padding: 10px 14px; width: auto; min-width: 120px; font-size: 0.85rem;
-        }
-        .bible-version-toggle {
-            display: flex; border-radius: var(--rad-pill); overflow: hidden;
-            border: 1px solid var(--card-brd);
-        }
-        .bible-version-toggle button {
-            padding: 8px 16px; border: none; background: var(--input-bg);
-            color: var(--txt2); cursor: pointer; font-size: 0.75rem;
-            font-family: var(--font-sans); text-transform: uppercase;
-            letter-spacing: 1px; transition: all 0.3s;
-        }
-        .bible-version-toggle button.active {
-            background: var(--pri); color: #fff;
-        }
-        .bible-typography-controls {
-            display: flex; gap: 6px; align-items: center; margin-left: auto;
-        }
-        .bible-typography-controls button {
-            width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--card-brd);
-            background: var(--input-bg); color: var(--txt); cursor: pointer;
-            font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s;
-        }
-        .bible-typography-controls button:hover { border-color: var(--pri); color: var(--pri); }
-        .bible-typography-controls button.active { background: var(--pri); color: #fff; border-color: var(--pri); }
-        .bible-text-content {
-            padding: 24px; line-height: 1.9; color: var(--txt);
-            font-family: var(--font-serif); font-size: 1.1rem;
-            min-height: 300px; position: relative;
-            user-select: text; -webkit-user-select: text;
-        }
-        .bible-text-content.sans-font { font-family: var(--font-sans); }
-        .bible-text-content .verse { margin-bottom: 8px; }
-        .bible-text-content .verse-num {
-            font-size: 0.7em; color: var(--pri); font-weight: 700;
-            vertical-align: super; margin-right: 4px; font-family: var(--font-sans);
-        }
-        .bible-nav-buttons {
-            display: flex; justify-content: space-between; margin-top: 16px; gap: 12px;
-        }
-        .bible-loading {
-            text-align: center; padding: 60px 20px; color: var(--txt2);
-        }
+
 
         /* ===== ASK AI TOOLTIP ===== */
         .ask-ai-tooltip {
@@ -525,8 +474,7 @@
             .today-context { padding: 16px; font-size: 0.88rem; margin-bottom: 20px; }
             .icon-btn { width: 40px; height: 40px; font-size: 1.1rem; }
             .header-controls { gap: 6px; }
-            .bible-reader-toolbar { gap: 8px; padding: 12px; }
-            .bible-reader-toolbar select { min-width: 100px; padding: 8px 10px; font-size: 0.8rem; }
+
             .bible-text-content { padding: 16px; font-size: 1rem; }
         }
 
@@ -548,48 +496,61 @@
             .modal-content { max-height: 85vh; }
         }
 
-        /* ===== BIBLE READER STYLES ===== */
-        .bible-reader-controls {
-            display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;
+
+
+        /* ===== BIBLE READER — YouVersion-inspired ===== */
+
+        /* Top Bar */
+        .reader-topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0 12px; gap: 10px;
         }
-        .bible-reader-controls select {
-            flex: 1; min-width: 120px; padding: 12px; font-size: 0.9rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
+        .reader-book-select {
+            display: flex; gap: 4px; align-items: center; flex: 1; min-width: 0;
         }
-        .version-toggle {
-            display: flex; gap: 0; border-radius: var(--rad-pill); overflow: hidden;
-            border: 1px solid var(--card-brd); transition: box-shadow 0.3s;
+        .reader-book-select select {
+            border: none; background: var(--pri-bg); border-radius: var(--rad-pill);
+            padding: 10px 16px; font-family: var(--font-serif); font-size: 1.05rem;
+            font-weight: 600; color: var(--pri); cursor: pointer; width: auto;
+            min-width: 0; transition: box-shadow 0.2s;
         }
-        .version-toggle:hover { box-shadow: 0 0 0 3px var(--pri-bg); }
-        .version-btn {
-            padding: 10px 18px; border: none; background: var(--input-bg);
-            color: var(--txt2); cursor: pointer; font-size: 0.72rem;
-            font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
-            transition: background 0.25s, color 0.25s, transform 0.15s; font-family: var(--font-sans);
-            position: relative;
+        .reader-book-select select:focus { outline: none; box-shadow: 0 0 0 3px var(--pri-bg); }
+        .reader-topbar-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        .version-chip {
+            background: var(--input-bg); border: 1px solid var(--card-brd);
+            border-radius: var(--rad-pill); padding: 8px 14px;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; color: var(--txt2); cursor: pointer;
+            font-family: var(--font-sans); transition: all 0.25s;
         }
-        .version-btn.active {
-            background: var(--pri); color: #fff;
+        .version-chip:hover { border-color: var(--pri); color: var(--pri); }
+        .reader-settings-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 1px solid var(--card-brd); background: var(--input-bg);
+            color: var(--txt); cursor: pointer; font-size: 0.95rem;
+            font-family: var(--font-serif); font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.25s;
         }
-        .version-btn.active::after {
-            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 2px; background: rgba(255,255,255,0.5); border-radius: 2px;
+        .reader-settings-btn:hover { border-color: var(--pri); color: var(--pri); }
+        .reader-settings-btn.active { background: var(--pri); color: #fff; border-color: var(--pri); }
+
+        /* Settings Panel */
+        .reader-settings-panel {
+            background: var(--card-bg); border: 1px solid var(--card-brd);
+            border-radius: var(--rad-sm); padding: 20px; margin-bottom: 16px;
+            backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            animation: fadeIn 0.25s ease;
         }
-        .version-btn:hover:not(.active) {
-            background: var(--pri-bg); color: var(--pri);
+        .reader-settings-row {
+            display: flex; align-items: center; gap: 14px; padding: 12px 0;
         }
-        .version-btn:active { transform: scale(0.96); }
-        .bible-text-controls {
-            display: flex; gap: 8px; align-items: center; margin-bottom: 16px;
-            justify-content: space-between; flex-wrap: wrap;
+        .reader-settings-row:not(:last-child) { border-bottom: 1px solid var(--card-brd); }
+        .reader-settings-label {
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--txt3); font-family: var(--font-sans); min-width: 52px; flex-shrink: 0;
         }
-        .font-control-group {
-            display: flex; align-items: center; gap: 8px;
-        }
-        .font-control-group label {
-            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px;
-            color: var(--txt3); font-family: var(--font-sans);
-        }
+        .reader-font-size-controls { display: flex; align-items: center; gap: 14px; flex: 1; }
         .font-btn {
             width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--card-brd);
             background: var(--input-bg); color: var(--txt); cursor: pointer;
@@ -599,116 +560,111 @@
         }
         .font-btn:hover { border-color: var(--pri); color: var(--pri); background: var(--pri-bg); }
         .font-btn:active { transform: scale(0.9); }
-        .font-style-select {
-            padding: 8px 12px; min-width: 110px; font-size: 0.85rem;
-            font-family: var(--font-sans);
+        .reader-font-size-value {
+            font-family: var(--font-sans); font-size: 0.85rem; color: var(--txt);
+            min-width: 44px; text-align: center;
+        }
+        .reader-font-options, .reader-version-options { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+        .reader-font-option, .reader-version-option {
+            padding: 8px 14px; border-radius: var(--rad-pill); border: 1px solid var(--card-brd);
+            background: var(--input-bg); color: var(--txt2); cursor: pointer;
+            font-size: 0.75rem; font-family: var(--font-sans); font-weight: 600; transition: all 0.25s;
+        }
+        .reader-version-option { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .reader-font-option.active, .reader-version-option.active { background: var(--pri); color: #fff; border-color: var(--pri); }
+        .reader-font-option:hover:not(.active), .reader-version-option:hover:not(.active) { border-color: var(--pri); color: var(--pri); }
+
+        /* Chapter Heading */
+        .reader-chapter-heading { text-align: center; padding: 28px 0 24px; animation: verseFadeIn 0.4s ease; }
+        .reader-book-name {
+            font-family: var(--font-sans); font-size: 0.72rem; text-transform: uppercase;
+            letter-spacing: 4px; color: var(--txt3); margin-bottom: 4px;
+        }
+        .reader-chapter-num {
+            font-family: var(--font-serif); font-size: 3rem; font-weight: 600;
+            color: var(--txt); line-height: 1.1;
         }
 
-        /* Bible Text Area */
+        /* Bible Text Area — full page, no box */
         .bible-text-area {
-            padding: 32px 28px; background: var(--input-bg); border: 1px solid var(--card-brd);
-            border-radius: var(--rad-sm); min-height: 320px;
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: 1.2rem; font-weight: 400; color: var(--txt);
-            line-height: 2.0; letter-spacing: 0.01em;
-            overflow-y: auto; max-height: 62vh; position: relative;
-            -webkit-user-select: text; user-select: text;
-            transition: opacity 0.3s ease;
-            scrollbar-width: thin; scrollbar-color: var(--pri-lt) transparent;
+            padding: 0 4px 48px; background: transparent; border: none;
+            box-shadow: none; border-radius: 0; min-height: 50vh; max-height: none;
+            overflow-y: visible; font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.35rem; font-weight: 400; color: var(--txt);
+            line-height: 2.15; letter-spacing: 0.01em;
+            -webkit-user-select: text; user-select: text; transition: opacity 0.3s ease;
         }
-        .bible-text-area::-webkit-scrollbar { width: 4px; }
-        .bible-text-area::-webkit-scrollbar-thumb { background: var(--pri-lt); border-radius: 4px; }
-        .bible-text-area::-webkit-scrollbar-track { background: transparent; }
-
-        /* Fade-in animation when new chapter loads */
-        .bible-text-area.loading { opacity: 0.4; }
+        .bible-text-area.loading { opacity: 0.3; }
         @keyframes verseFadeIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .bible-text-area.loaded {
-            animation: verseFadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
-
-        /* Paragraphs from API.Bible */
-        .bible-text-area p {
-            margin-bottom: 0.6em;
-            margin-top: 0;
-            text-indent: 0;
-        }
-
-        /* Section headings that API returns */
+        .bible-text-area.loaded { animation: verseFadeIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .bible-text-area p { margin-bottom: 0.75em; margin-top: 0; text-indent: 0; }
         .bible-text-area h3, .bible-text-area h4 {
-            font-family: var(--font-sans);
-            font-size: 0.78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--txt3);
-            margin: 32px 0 12px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid var(--card-brd);
+            font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2.5px; color: var(--pri);
+            margin: 36px 0 14px; padding-bottom: 6px; border-bottom: 1px solid var(--card-brd); opacity: 0.7;
         }
-        .bible-text-area h3:first-child,
-        .bible-text-area h4:first-child {
-            margin-top: 0;
-        }
-
-        /* Verse numbers */
+        .bible-text-area h3:first-child, .bible-text-area h4:first-child { margin-top: 0; }
         .bible-text-area .v {
-            font-size: 0.6em;
-            vertical-align: super;
-            color: var(--pri);
-            font-weight: 700;
-            margin-right: 3px;
-            margin-left: 2px;
-            font-family: var(--font-sans);
-            letter-spacing: 0;
-            line-height: 0;
-            opacity: 0.85;
-            user-select: none;
-            transition: opacity 0.2s;
+            font-size: 0.55em; vertical-align: super; color: var(--pri); font-weight: 700;
+            margin-right: 3px; margin-left: 2px; font-family: var(--font-sans);
+            letter-spacing: 0; line-height: 0; opacity: 0.65; user-select: none; transition: opacity 0.2s;
         }
         .bible-text-area .v:hover { opacity: 1; }
-
-        /* Drop-cap on chapter start (only if first child is a <p>) */
-        .bible-text-area > p:first-child::first-letter {
-            font-size: 2.8em;
-            font-weight: 600;
-            float: left;
-            line-height: 0.85;
-            margin-right: 6px;
-            margin-top: 4px;
-            color: var(--pri);
+        .bible-text-area > p:first-of-type::first-letter {
+            font-size: 3.4em; font-weight: 600; float: left; line-height: 0.78;
+            margin-right: 8px; margin-top: 6px; color: var(--pri);
             font-family: 'Cormorant Garamond', Georgia, serif;
         }
-        /* Suppress drop-cap when first child is a heading */
         .bible-text-area > h3:first-child + p::first-letter,
-        .bible-text-area > h4:first-child + p::first-letter {
-            font-size: inherit;
-            float: none;
-            margin: 0;
-        }
+        .bible-text-area > h4:first-child + p::first-letter { font-size: inherit; float: none; margin: 0; line-height: inherit; }
 
         .bible-copyright {
-            font-size: 0.68rem; color: var(--txt3); margin-top: 12px;
-            padding: 10px 16px; background: var(--input-bg); border-radius: var(--rad-sm);
-            text-align: center; font-style: italic; font-family: var(--font-sans);
-            letter-spacing: 0.3px;
+            font-size: 0.68rem; color: var(--txt3); margin-top: 8px; padding: 12px 16px;
+            background: var(--input-bg); border-radius: var(--rad-sm); text-align: center;
+            font-style: italic; font-family: var(--font-sans); letter-spacing: 0.3px;
             animation: verseFadeIn 0.4s ease forwards;
         }
-        .bible-nav-row {
-            display: flex; justify-content: space-between; margin-top: 16px; gap: 8px;
+
+        /* Bottom Nav */
+        .reader-bottom-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 0 8px; border-top: 1px solid var(--card-brd);
         }
-        .bible-nav-row .btn {
-            flex: 1; max-width: 140px;
-            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        .reader-nav-location {
+            font-family: var(--font-serif); font-size: 0.95rem; color: var(--txt2); text-align: center;
         }
-        .bible-nav-row .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px var(--pri-bg);
+
+        /* Loading state */
+        #bible-reader .bible-loading {
+            text-align: center; padding: 80px 20px; color: var(--txt3);
+            min-height: 40vh; display: flex; align-items: center; justify-content: center;
         }
-        .bible-nav-row .btn:active { transform: translateY(0) scale(0.97); }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .reader-topbar { padding: 4px 0 8px; gap: 6px; }
+            .reader-book-select select { padding: 8px 12px; font-size: 0.95rem; }
+            .version-chip { padding: 6px 10px; font-size: 0.62rem; }
+            .reader-settings-btn { width: 36px; height: 36px; font-size: 0.85rem; }
+            .reader-chapter-heading { padding: 20px 0 16px; }
+            .reader-chapter-num { font-size: 2.4rem; }
+            .reader-book-name { font-size: 0.65rem; letter-spacing: 3px; }
+            .bible-text-area { font-size: 1.15rem; line-height: 2.0; padding: 0 2px 36px; }
+            .bible-text-area > p:first-of-type::first-letter { font-size: 2.8em; }
+            .reader-settings-panel { padding: 14px; }
+            .reader-settings-row { flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+            .reader-settings-label { min-width: 100%; }
+            .reader-font-option, .reader-version-option { padding: 7px 12px; font-size: 0.68rem; }
+            .reader-bottom-nav .btn { padding: 8px 14px; font-size: 0.7rem; }
+            .reader-nav-location { font-size: 0.8rem; }
+        }
+        @media (max-width: 375px) {
+            .bible-text-area { font-size: 1.05rem; line-height: 1.9; }
+            .reader-chapter-num { font-size: 2rem; }
+        }
 
         /* Chat Tab (full-screen tab container) */
         #chat-tab .chat-tab-container {
@@ -745,9 +701,6 @@
         .clear-chat-btn:hover { transform: rotate(180deg); color: var(--danger); }
 
         @media (max-width: 480px) {
-            .bible-reader-controls { flex-direction: column; }
-            .bible-reader-controls select { width: 100%; }
-            .bible-text-area { font-size: 1rem; padding: 16px; max-height: 50vh; }
             #chat-tab .chat-tab-container { height: calc(100vh - 200px); }
         }
     </style>
@@ -829,65 +782,80 @@
         </section>
 
         <!-- Bible Reader Tab -->
+        <!-- Bible Reader Tab -->
         <section id="bible-reader" class="tab-panel">
-            <div class="glass-card">
-                <div class="section-header" style="margin-top:0;">
-                    <h3 class="serif">📖 Bible Reader</h3>
-                </div>
 
-                <!-- Version Toggle -->
-                <div class="version-toggle" style="margin-bottom: 16px;">
-                    <button class="version-btn active" onclick="switchBibleVersion('NLT')" data-version="NLT">NLT</button>
-                    <button class="version-btn" onclick="switchBibleVersion('NIV')" data-version="NIV">NIV</button>
-                    <button class="version-btn" onclick="switchBibleVersion('KJV')" data-version="KJV">KJV</button>
-                    <button class="version-btn" onclick="switchBibleVersion('ESV')" data-version="ESV">ESV</button>
-                    <button class="version-btn" onclick="switchBibleVersion('WEB')" data-version="WEB">WEB</button>
-                </div>
-
-                <!-- Book & Chapter Selectors -->
-                <div class="bible-reader-controls">
+            <!-- Compact Top Bar -->
+            <div class="reader-topbar">
+                <div class="reader-book-select">
                     <select id="bibleBookSelect" onchange="onBibleBookChange()">
-                        <option value="">Select Book...</option>
+                        <option value="">Book...</option>
                     </select>
                     <select id="bibleChapterSelect" onchange="loadBibleChapter()">
                         <option value="">Ch.</option>
                     </select>
                 </div>
-
-                <!-- Typography Controls -->
-                <div class="bible-text-controls">
-                    <div class="font-control-group">
-                        <label>Size</label>
-                        <button class="font-btn" onclick="adjustReaderFontSize(-1)">A-</button>
-                        <button class="font-btn" onclick="adjustReaderFontSize(1)">A+</button>
-                    </div>
-                    <div class="font-control-group">
-                        <label>Font</label>
-                        <select class="font-style-select" id="readerFontSelect" onchange="setReaderFont(this.value)">
-                            <option value="'Cormorant Garamond', Georgia, serif">Serif</option>
-                            <option value="'Outfit', system-ui, sans-serif">Sans-Serif</option>
-                            <option value="Georgia, serif">Georgia</option>
-                            <option value="'Courier New', monospace">Monospace</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Bible Text Display -->
-                <div class="bible-text-area" id="bibleTextArea">
-                    <div class="bible-loading">
-                        <p style="text-align:center;">Select a book and chapter to start reading.</p>
-                    </div>
-                </div>
-
-                <!-- Copyright Notice -->
-                <div class="bible-copyright" id="bibleCopyright" style="display:none;"></div>
-
-                <!-- Chapter Navigation -->
-                <div class="bible-nav-row">
-                    <button class="btn btn-secondary btn-small" onclick="prevBibleChapter()">← Previous</button>
-                    <button class="btn btn-secondary btn-small" onclick="nextBibleChapter()">Next →</button>
+                <div class="reader-topbar-actions">
+                    <button class="version-chip" id="versionChip">NLT</button>
+                    <button class="reader-settings-btn" id="readerSettingsBtn" onclick="toggleReaderSettings()">Aa</button>
                 </div>
             </div>
+
+            <!-- Collapsible Settings Panel -->
+            <div class="reader-settings-panel" id="readerSettingsPanel" style="display:none;">
+                <div class="reader-settings-row">
+                    <span class="reader-settings-label">Size</span>
+                    <div class="reader-font-size-controls">
+                        <button class="font-btn" onclick="adjustReaderFontSize(-1)">A&minus;</button>
+                        <span class="reader-font-size-value" id="readerFontSizeDisplay">135%</span>
+                        <button class="font-btn" onclick="adjustReaderFontSize(1)">A+</button>
+                    </div>
+                </div>
+                <div class="reader-settings-row">
+                    <span class="reader-settings-label">Font</span>
+                    <div class="reader-font-options">
+                        <button class="reader-font-option active" onclick="selectReaderFont(this)" data-font="'Cormorant Garamond', Georgia, serif">Serif</button>
+                        <button class="reader-font-option" onclick="selectReaderFont(this)" data-font="'Outfit', system-ui, sans-serif">Sans</button>
+                        <button class="reader-font-option" onclick="selectReaderFont(this)" data-font="Georgia, serif">Georgia</button>
+                    </div>
+                </div>
+                <div class="reader-settings-row">
+                    <span class="reader-settings-label">Version</span>
+                    <div class="reader-version-options">
+                        <button class="reader-version-option active" onclick="switchBibleVersion('NLT')" data-version="NLT">NLT</button>
+                        <button class="reader-version-option" onclick="switchBibleVersion('NIV')" data-version="NIV">NIV</button>
+                        <button class="reader-version-option" onclick="switchBibleVersion('KJV')" data-version="KJV">KJV</button>
+                        <button class="reader-version-option" onclick="switchBibleVersion('ESV')" data-version="ESV">ESV</button>
+                        <button class="reader-version-option" onclick="switchBibleVersion('WEB')" data-version="WEB">WEB</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chapter Heading (YouVersion style) -->
+            <div class="reader-chapter-heading" id="readerChapterHeading" style="display:none;">
+                <div class="reader-book-name" id="readerBookName"></div>
+                <div class="reader-chapter-num" id="readerChapterNum"></div>
+            </div>
+
+            <!-- Full-page Reading Area -->
+            <div class="bible-text-area" id="bibleTextArea">
+                <div class="bible-loading" style="padding: 80px 20px;">
+                    <p style="text-align:center; color: var(--txt3); font-family: var(--font-sans); font-size: 0.9rem;">
+                        Select a book and chapter to start reading.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="bible-copyright" id="bibleCopyright" style="display:none;"></div>
+
+            <!-- Bottom Chapter Navigation -->
+            <div class="reader-bottom-nav" id="readerBottomNav" style="display:none;">
+                <button class="btn btn-secondary btn-small" onclick="prevBibleChapter()">&#9664; Previous</button>
+                <span class="reader-nav-location" id="readerNavLocation"></span>
+                <button class="btn btn-secondary btn-small" onclick="nextBibleChapter()">Next &#9654;</button>
+            </div>
+
         </section>
 
         <!-- AI Chat Tab -->
@@ -1417,6 +1385,21 @@
             setTimeout(() => textArea.classList.remove('loaded'), 600);
             textArea.scrollTop = 0;
 
+            // Update YouVersion-style chapter heading
+            const heading = document.getElementById('readerChapterHeading');
+            if (heading) {
+                heading.style.display = 'block';
+                document.getElementById('readerBookName').textContent = bookName.toUpperCase();
+                document.getElementById('readerChapterNum').textContent = chapter;
+            }
+
+            // Show bottom nav with location
+            const bottomNav = document.getElementById('readerBottomNav');
+            if (bottomNav) {
+                bottomNav.style.display = 'flex';
+                document.getElementById('readerNavLocation').textContent = bookName + ' ' + chapter;
+            }
+
             // Show copyright with source indicator
             if (copyright) {
                 let copyrightText = data.copyright || '';
@@ -1447,9 +1430,19 @@
 
     function switchBibleVersion(version) {
         currentBibleVersion = version;
+
+        // Update settings panel version buttons
+        document.querySelectorAll('.reader-version-option').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.version === version);
+        });
+        // Backward compat
         document.querySelectorAll('.version-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.version === version);
         });
+        // Update version chip label
+        const chip = document.getElementById('versionChip');
+        if (chip) chip.textContent = version;
+
         const bookName = document.getElementById('bibleBookSelect').value;
         const chapter = document.getElementById('bibleChapterSelect').value;
         if (bookName && chapter) loadBibleChapter();
@@ -1501,9 +1494,11 @@
     }
 
     function adjustReaderFontSize(delta) {
-        readerFontSize = Math.max(0.8, Math.min(2.0, readerFontSize + (delta * 0.1)));
+        readerFontSize = Math.max(0.8, Math.min(2.2, readerFontSize + (delta * 0.1)));
         const textArea = document.getElementById('bibleTextArea');
         if (textArea) textArea.style.fontSize = readerFontSize + 'rem';
+        const display = document.getElementById('readerFontSizeDisplay');
+        if (display) display.textContent = Math.round(readerFontSize * 100) + '%';
     }
 
     // Keep adjustBibleFontSize as alias
@@ -1512,6 +1507,20 @@
     function setReaderFont(fontFamily) {
         const textArea = document.getElementById('bibleTextArea');
         if (textArea) textArea.style.fontFamily = fontFamily;
+    }
+
+    function toggleReaderSettings() {
+        const panel = document.getElementById('readerSettingsPanel');
+        const btn = document.getElementById('readerSettingsBtn');
+        const isHidden = panel.style.display === 'none';
+        panel.style.display = isHidden ? 'block' : 'none';
+        btn.classList.toggle('active', isHidden);
+    }
+
+    function selectReaderFont(btn) {
+        document.querySelectorAll('.reader-font-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setReaderFont(btn.dataset.font);
     }
 
     function toggleBibleFontStyle() {
