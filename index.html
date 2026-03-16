@@ -725,6 +725,7 @@
                     <button class="version-btn" onclick="switchBibleVersion('NIV')" data-version="NIV">NIV</button>
                     <button class="version-btn" onclick="switchBibleVersion('KJV')" data-version="KJV">KJV</button>
                     <button class="version-btn" onclick="switchBibleVersion('ESV')" data-version="ESV">ESV</button>
+                    <button class="version-btn" onclick="switchBibleVersion('WEB')" data-version="WEB">WEB</button>
                 </div>
 
                 <!-- Book & Chapter Selectors -->
@@ -1239,6 +1240,7 @@
     async function loadBibleChapter() {
         const bookName = document.getElementById('bibleBookSelect').value;
         const chapter = document.getElementById('bibleChapterSelect').value;
+
         if (!bookName || !chapter) return;
 
         const textArea = document.getElementById('bibleTextArea');
@@ -1253,31 +1255,64 @@
             const data = await response.json();
 
             if (data.error) {
-                textArea.innerHTML = `<div class="bible-loading" style="flex-direction:column; gap:12px; text-align:center;">
-                    <p style="color:var(--danger); font-family:var(--font-sans); font-size:0.9rem;">⚠️ ${data.error}</p>
-                    <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
-                </div>`;
+                let errorHtml = `<div class="bible-loading" style="flex-direction:column; gap:16px; text-align:center; padding:20px;">
+                    <p style="color:var(--danger); font-family:var(--font-sans); font-size:0.9rem;">⚠️ ${data.error}</p>`;
+
+                if (data.hint) {
+                    errorHtml += `<p style="color:var(--txt2); font-family:var(--font-sans); font-size:0.8rem;">${data.hint}</p>`;
+                }
+                if (data.setupUrl) {
+                    errorHtml += `<a href="${data.setupUrl}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Get API Key</a>`;
+                }
+
+                // Offer free fallback for copyrighted versions
+                if (currentBibleVersion !== 'WEB' && currentBibleVersion !== 'KJV') {
+                    errorHtml += `<div style="margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('KJV'); loadBibleChapter()">Try KJV (free)</button>
+                        <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('WEB'); loadBibleChapter()">Try WEB (free)</button>
+                    </div>`;
+                }
+
+                errorHtml += `<button class="btn btn-primary btn-small" style="margin-top:8px;" onclick="loadBibleChapter()">Retry ${currentBibleVersion}</button>`;
+                errorHtml += `</div>`;
+
+                textArea.innerHTML = errorHtml;
                 return;
             }
 
             let content = data.content || '';
+
+            // Clean up API.Bible HTML formatting
             content = content
-                .replace(/<span[^>]*data-number="(\d+)"[^>]*>/g, '<span class="v">$1</span>')
-                .replace(/<span[^>]*class="v"[^>]*>(\d+)<\/span>/g, '<span class="v">$1 </span>');
+                .replace(/<span[^>]*data-number="(\d+)"[^>]*>/g, '<span class="v">$1 </span>')
+                .replace(/<\/span>/g, '')
+                .replace(/<p[^>]*class="[^"]*"[^>]*>/g, '<p>')
+                .replace(/\n{3,}/g, '\n\n');
 
             textArea.innerHTML = content || '<p style="color:var(--txt2)">No content available for this chapter.</p>';
             textArea.scrollTop = 0;
 
-            if (data.copyright && copyright) {
-                copyright.textContent = data.copyright;
-                copyright.style.display = 'block';
+            // Show copyright with source indicator
+            if (copyright) {
+                let copyrightText = data.copyright || '';
+                if (data.source === 'bible-api.com (free)') {
+                    copyrightText += ' · Using free API (no key required)';
+                }
+                if (copyrightText) {
+                    copyright.textContent = copyrightText;
+                    copyright.style.display = 'block';
+                }
             }
+
         } catch (err) {
             console.error('Bible load error:', err);
             textArea.innerHTML = `<div class="bible-loading" style="flex-direction:column; gap:12px; text-align:center;">
                 <p style="color:var(--danger); font-family:var(--font-sans);">Failed to load Bible text.</p>
-                <p style="color:var(--txt3); font-size:0.8rem;">Check your internet connection and API configuration.</p>
-                <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
+                <p style="color:var(--txt3); font-family:var(--font-sans); font-size:0.8rem;">Check your internet connection.</p>
+                <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                    <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
+                    <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('KJV'); loadBibleChapter()">Try KJV (free)</button>
+                </div>
             </div>`;
         }
     }
