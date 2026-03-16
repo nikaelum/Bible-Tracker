@@ -666,6 +666,70 @@
             .reader-chapter-num { font-size: 2rem; }
         }
 
+        /* ===== READER SESSION BAR ===== */
+        .reader-session-bar {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; padding: 14px 18px; margin-bottom: 8px;
+            background: var(--card-bg); border: 1.5px solid var(--pri);
+            border-radius: var(--rad-sm); backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .reader-session-bar.running { border-color: var(--success); box-shadow: 0 4px 24px rgba(107, 142, 107, 0.18); }
+        .reader-session-bar.paused { border-color: var(--warn); box-shadow: 0 4px 24px rgba(201, 154, 92, 0.15); }
+        .reader-session-bar.completed { border-color: var(--success); background: rgba(107, 142, 107, 0.12); }
+        .session-bar-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .session-bar-badge {
+            background: var(--pri); color: #fff; padding: 3px 10px;
+            border-radius: var(--rad-pill); font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 1.5px; font-family: var(--font-sans); white-space: nowrap; flex-shrink: 0;
+        }
+        .session-bar-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .session-bar-passage {
+            font-family: var(--font-serif); font-size: 0.95rem; font-weight: 600; color: var(--txt);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .session-bar-estimate {
+            font-size: 0.68rem; color: var(--txt3); font-family: var(--font-sans);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .session-bar-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .session-bar-timer {
+            font-family: var(--font-serif); font-size: 1.4rem; font-weight: 600; color: var(--txt2);
+            font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; transition: color 0.3s;
+        }
+        .reader-session-bar.running .session-bar-timer { color: var(--success); }
+        .reader-session-bar.paused .session-bar-timer { color: var(--warn); animation: blink 1.5s infinite; }
+        .session-bar-controls { display: flex; gap: 8px; align-items: center; }
+        .session-ctrl {
+            width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer;
+            font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center;
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); font-family: var(--font-sans); font-weight: 700;
+        }
+        .session-ctrl:active { transform: scale(0.9); }
+        .session-ctrl-start { background: var(--success); color: #fff; box-shadow: 0 3px 12px rgba(107, 142, 107, 0.35); }
+        .session-ctrl-start:hover { transform: scale(1.08); box-shadow: 0 5px 18px rgba(107, 142, 107, 0.45); }
+        .session-ctrl-pause { background: var(--warn); color: #fff; font-size: 0.7rem; letter-spacing: -2px; }
+        .session-ctrl-resume { background: var(--success); color: #fff; }
+        .session-ctrl-done { background: var(--pri); color: #fff; font-size: 1rem; box-shadow: 0 3px 12px var(--pri-bg); }
+        .session-ctrl-done:hover { transform: scale(1.08); box-shadow: 0 5px 18px var(--pri-bg); }
+        .session-complete-message {
+            display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%;
+            font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; color: var(--success);
+            animation: fadeIn 0.3s ease;
+        }
+        @media (max-width: 480px) {
+            .reader-session-bar { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+            .session-bar-left { gap: 8px; }
+            .session-bar-badge { font-size: 0.52rem; padding: 2px 8px; }
+            .session-bar-passage { font-size: 0.82rem; }
+            .session-bar-timer { font-size: 1.15rem; }
+            .session-ctrl { width: 34px; height: 34px; font-size: 0.75rem; }
+            .session-bar-controls { gap: 6px; }
+        }
+
         /* Chat Tab (full-screen tab container) */
         #chat-tab .chat-tab-container {
             display: flex; flex-direction: column; height: calc(100vh - 220px);
@@ -758,9 +822,10 @@
                 <div class="today-reading" id="todayReading">Loading...</div>
                 <div class="today-context" id="todayContext"></div>
                 <div class="today-actions">
-                    <button class="btn btn-secondary" id="startTimerBtn" onclick="startTimerForToday()">⏱️ Timer</button>
-                    <button class="btn btn-primary" id="todayBtn" onclick="toggleToday()">✓ Mark Complete</button>
-                    <button class="btn btn-secondary" onclick="toggleContext()" title="Get Historical Context">🤖 AI Context</button>
+                    <button class="btn btn-primary" id="readNowBtn" onclick="navigateToReading(getCurrentDay())">&#128214; Read Now</button>
+                    <button class="btn btn-secondary" id="startTimerBtn" onclick="startTimerForToday()">&#9201; Timer</button>
+                    <button class="btn btn-secondary" id="todayBtn" onclick="toggleToday()">&#10003; Mark Complete</button>
+                    <button class="btn btn-secondary" onclick="toggleContext()" title="Get Historical Context">&#129302; AI Context</button>
                 </div>
             </div>
             <div class="glass-card" id="catchupAlert" style="display: none; border-color: var(--danger);">
@@ -796,7 +861,7 @@
                     </select>
                 </div>
                 <div class="reader-topbar-actions">
-                    <button class="version-chip" id="versionChip">NLT</button>
+                    <button class="version-chip" id="versionChip" onclick="toggleReaderSettings()">NLT</button>
                     <button class="reader-settings-btn" id="readerSettingsBtn" onclick="toggleReaderSettings()">Aa</button>
                 </div>
             </div>
@@ -827,6 +892,26 @@
                         <button class="reader-version-option" onclick="switchBibleVersion('KJV')" data-version="KJV">KJV</button>
                         <button class="reader-version-option" onclick="switchBibleVersion('ESV')" data-version="ESV">ESV</button>
                         <button class="reader-version-option" onclick="switchBibleVersion('WEB')" data-version="WEB">WEB</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading Session Bar (sticky) -->
+            <div class="reader-session-bar" id="readerSessionBar" style="display:none;">
+                <div class="session-bar-left">
+                    <span class="session-bar-badge" id="sessionDayBadge">DAY 1</span>
+                    <div class="session-bar-meta">
+                        <span class="session-bar-passage" id="sessionPassage">Genesis 1-3</span>
+                        <span class="session-bar-estimate" id="sessionEstimate">~9 min</span>
+                    </div>
+                </div>
+                <div class="session-bar-right">
+                    <div class="session-bar-timer" id="sessionTimerDisplay">00:00</div>
+                    <div class="session-bar-controls">
+                        <button class="session-ctrl session-ctrl-start" id="sessionBtnStart" onclick="startReaderTimer()" title="Begin Timer">&#9654;</button>
+                        <button class="session-ctrl session-ctrl-pause" id="sessionBtnPause" onclick="pauseTimer();updateReaderSessionBar();" style="display:none;" title="Pause">&#10074;&#10074;</button>
+                        <button class="session-ctrl session-ctrl-resume" id="sessionBtnResume" onclick="resumeTimer();updateReaderSessionBar();" style="display:none;" title="Resume">&#9654;</button>
+                        <button class="session-ctrl session-ctrl-done" id="sessionBtnDone" onclick="completeFromReader()" title="Complete Reading">&#10003;</button>
                     </div>
                 </div>
             </div>
@@ -1248,6 +1333,125 @@
     let audioChunks = [];
     let isRecording = false;
 
+    // ===== READ NOW INTEGRATION =====
+
+    function parsePassageForReader(passageStr) {
+        const firstPassage = passageStr.split(',')[0].trim();
+        const match = firstPassage.match(/^(.+?)\s+(\d+)(?:\s*-\s*(\d+))?$/);
+        if (match) {
+            const bookName = match[1].trim();
+            const book = bibleBooks.find(b => b.name.toLowerCase() === bookName.toLowerCase());
+            if (book) {
+                return { book: book.name, startChapter: parseInt(match[2]), endChapter: match[3] ? parseInt(match[3]) : parseInt(match[2]) };
+            }
+        }
+        return null;
+    }
+
+    function navigateToReading(dayNum) {
+        const plan = state.readingPlan[dayNum - 1];
+        if (!plan) return;
+        const parsed = parsePassageForReader(plan.reading);
+        if (parsed) {
+            const bookSelect = document.getElementById('bibleBookSelect');
+            if (bookSelect) {
+                bookSelect.value = parsed.book;
+                onBibleBookChange();
+                const chapterSelect = document.getElementById('bibleChapterSelect');
+                if (chapterSelect) chapterSelect.value = parsed.startChapter;
+            }
+        }
+        if (!timerState.isActive || timerState.dayNum !== dayNum) prepareTimerForDay(dayNum);
+        switchTab('bible-reader');
+        if (parsed) loadBibleChapter();
+        const panel = document.getElementById('readerSettingsPanel');
+        if (panel) panel.style.display = 'none';
+        const settingsBtn = document.getElementById('readerSettingsBtn');
+        if (settingsBtn) settingsBtn.classList.remove('active');
+    }
+
+    function prepareTimerForDay(dayNum) {
+        const plan = state.readingPlan[dayNum - 1];
+        if (!plan) return;
+        if (timerState.isActive && timerState.dayNum !== dayNum) {
+            if (!confirm('Active timer on Day ' + timerState.dayNum + '. Switch to Day ' + dayNum + '?')) return;
+        }
+        timerState.isActive = true; timerState.isRunning = false; timerState.dayNum = dayNum;
+        timerState.passage = plan.reading; timerState.chapters = plan.chapters;
+        timerState.startedAt = null; timerState.pausedAt = null;
+        timerState.accumulatedMs = plan.totalReadingTimeMs || 0;
+        saveTimerState(); updateTimerIndicators();
+    }
+
+    function startReaderTimer() {
+        if (!timerState.isActive) return;
+        startTimer();
+        updateReaderSessionBar();
+    }
+
+    function completeFromReader() {
+        if (!timerState.isActive) return;
+        if (timerState.isRunning) timerState.accumulatedMs += Date.now() - timerState.startedAt;
+        const totalMs = timerState.accumulatedMs, dayNum = timerState.dayNum, plan = state.readingPlan[dayNum - 1];
+        const session = { id: Date.now(), dayNum, passage: timerState.passage, chapters: timerState.chapters, durationMs: totalMs, date: new Date().toISOString() };
+        state.sessions.push(session);
+        if (plan) { plan.totalReadingTimeMs = totalMs; plan.completed = true; plan.completedAt = new Date().toISOString(); }
+        state.stats.timerSessions++;
+        const estimatedMs = getEstimatedReadingTime(timerState.chapters) * 60000;
+        if (totalMs < estimatedMs) state.stats.fasterSessions++;
+        saveState();
+        const bar = document.getElementById('readerSessionBar');
+        if (bar) {
+            bar.className = 'reader-session-bar completed';
+            bar.innerHTML = '<div class="session-complete-message"><span style="font-size:1.3rem;">&#10004;</span><span>Reading Complete!</span><span style="font-family:var(--font-serif);color:var(--pri);font-weight:600;">' + formatDuration(totalMs) + '</span></div>';
+        }
+        clearTimerState(); updateTimerUI(); updateTimerIndicators(); hideFloatingTimer(); renderAll();
+        setTimeout(function() { if (bar) bar.style.display = 'none'; showCelebration(); }, 1800);
+    }
+
+    function updateReaderSessionBar() {
+        const bar = document.getElementById('readerSessionBar');
+        if (!bar) return;
+        const isReaderTab = document.getElementById('bible-reader')?.classList.contains('active');
+        if (!timerState.isActive || !isReaderTab) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        bar.className = 'reader-session-bar';
+        if (!document.getElementById('sessionDayBadge')) {
+            bar.innerHTML = '<div class="session-bar-left"><span class="session-bar-badge" id="sessionDayBadge"></span><div class="session-bar-meta"><span class="session-bar-passage" id="sessionPassage"></span><span class="session-bar-estimate" id="sessionEstimate"></span></div></div><div class="session-bar-right"><div class="session-bar-timer" id="sessionTimerDisplay">00:00</div><div class="session-bar-controls"><button class="session-ctrl session-ctrl-start" id="sessionBtnStart" onclick="startReaderTimer()" title="Begin Timer">&#9654;</button><button class="session-ctrl session-ctrl-pause" id="sessionBtnPause" onclick="pauseTimer();updateReaderSessionBar();" style="display:none;" title="Pause">&#10074;&#10074;</button><button class="session-ctrl session-ctrl-resume" id="sessionBtnResume" onclick="resumeTimer();updateReaderSessionBar();" style="display:none;" title="Resume">&#9654;</button><button class="session-ctrl session-ctrl-done" id="sessionBtnDone" onclick="completeFromReader()" title="Complete Reading">&#10003;</button></div></div>';
+        }
+        const badge = document.getElementById('sessionDayBadge');
+        const passage = document.getElementById('sessionPassage');
+        const estimate = document.getElementById('sessionEstimate');
+        if (badge) badge.textContent = 'DAY ' + timerState.dayNum;
+        if (passage) passage.textContent = timerState.passage.length > 32 ? timerState.passage.substring(0, 32) + '...' : timerState.passage;
+        if (estimate) estimate.textContent = '~' + getEstimatedReadingTime(timerState.chapters) + ' min';
+        const startBtn = document.getElementById('sessionBtnStart');
+        const pauseBtn = document.getElementById('sessionBtnPause');
+        const resumeBtn = document.getElementById('sessionBtnResume');
+        bar.classList.remove('running', 'paused', 'completed');
+        if (timerState.isRunning) {
+            bar.classList.add('running');
+            if (startBtn) startBtn.style.display = 'none';
+            if (pauseBtn) pauseBtn.style.display = 'inline-flex';
+            if (resumeBtn) resumeBtn.style.display = 'none';
+        } else if (timerState.accumulatedMs > 0 || timerState.pausedAt) {
+            bar.classList.add('paused');
+            if (startBtn) startBtn.style.display = 'none';
+            if (pauseBtn) pauseBtn.style.display = 'none';
+            if (resumeBtn) resumeBtn.style.display = 'inline-flex';
+        } else {
+            if (startBtn) startBtn.style.display = 'inline-flex';
+            if (pauseBtn) pauseBtn.style.display = 'none';
+            if (resumeBtn) resumeBtn.style.display = 'none';
+        }
+    }
+
+    function formatTimeShort(ms) {
+        const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+        if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+        return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+    }
+
     function init() {
         loadState(); loadTimerState();
         if (!state.startDate) {
@@ -1563,8 +1767,12 @@
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
 
-            tooltip.style.left = Math.min(rect.left + rect.width / 2 - 50, window.innerWidth - 130) + 'px';
-            tooltip.style.top = (rect.top - 45 + window.scrollY) + 'px';
+            // position: fixed uses viewport coords — no scrollY needed
+            const left = Math.min(rect.left + rect.width / 2 - 50, window.innerWidth - 130);
+            const top = Math.max(10, rect.top - 45);
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
             tooltip.classList.add('show');
         }
     }
@@ -1728,19 +1936,19 @@
     function startTimer() {
         if (!timerState.isActive) startTimerForToday();
         timerState.isRunning = true; timerState.startedAt = Date.now(); timerState.pausedAt = null;
-        saveTimerState(); updateTimerUI(); updateTimerIndicators();
+        saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
         if (state.settings.showFloatingTimer) showFloatingTimer();
     }
     function pauseTimer() {
         if (!timerState.isRunning) return;
         timerState.accumulatedMs += Date.now() - timerState.startedAt;
         timerState.isRunning = false; timerState.pausedAt = Date.now(); timerState.startedAt = null;
-        saveTimerState(); updateTimerUI(); updateTimerIndicators();
+        saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
     }
     function resumeTimer() {
         if (timerState.isRunning) return;
         timerState.isRunning = true; timerState.startedAt = Date.now(); timerState.pausedAt = null;
-        saveTimerState(); updateTimerUI(); updateTimerIndicators();
+        saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
         if (state.settings.showFloatingTimer) showFloatingTimer();
     }
     function stopAndSaveTimer() {
@@ -1748,9 +1956,9 @@
         if (timerState.isRunning) timerState.accumulatedMs += Date.now() - timerState.startedAt;
         const totalMs = timerState.accumulatedMs, dayNum = timerState.dayNum, plan = state.readingPlan[dayNum - 1];
         if (plan) plan.totalReadingTimeMs = totalMs;
-        saveState(); clearTimerState(); updateTimerUI(); updateTimerIndicators(); hideFloatingTimer(); renderAll();
+        saveState(); clearTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar(); hideFloatingTimer(); renderAll();
     }
-    function discardTimer() { if (!timerState.isActive) return; if (confirm('Discard this timer session?')) { clearTimerState(); updateTimerUI(); updateTimerIndicators(); hideFloatingTimer(); } }
+    function discardTimer() { if (!timerState.isActive) return; if (confirm('Discard this timer session?')) { clearTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar(); hideFloatingTimer(); } }
 
     function completeReading() {
         if (!timerState.isActive) return;
@@ -1776,6 +1984,7 @@
         const md = document.getElementById('timerDisplay'); if (md) md.textContent = timeStr;
         const fd = document.getElementById('floatingTimerDisplay'); if (fd) fd.textContent = timeStr;
         const ad = document.getElementById('alertTimerDisplay'); if (ad) ad.textContent = timeStr;
+        const sd = document.getElementById('sessionTimerDisplay'); if (sd) sd.textContent = formatTimeShort(currentMs);
         if (timerState.chapters) {
             const est = getEstimatedReadingTime(timerState.chapters) * 60000, diff = currentMs - est;
             document.getElementById('comparisonEstimated').textContent = formatDuration(est);
@@ -1837,6 +2046,7 @@
             if (timerState.dayNum === getCurrentDay()) { if(tb){tb.style.display='inline'; tb.className=timerState.isRunning?'badge badge-timer':'badge badge-paused'; tb.textContent=timerState.isRunning?'Timer Active':'Timer Paused';} }
             else { if(tb) tb.style.display='none'; }
         } else { if(ni) ni.style.display='none'; if(ab) ab.style.display='none'; if(tb) tb.style.display='none'; }
+        updateReaderSessionBar();
     }
 
     function showFloatingTimer() { if (timerState.isActive && state.settings.showFloatingTimer) document.getElementById('floatingTimer').classList.add('show'); }
@@ -1913,8 +2123,16 @@
             if (todayPlan.totalReadingTimeMs > 0) timeDisplay = formatDuration(todayPlan.totalReadingTimeMs) + ' tracked';
             document.getElementById('readingTimeBadge').textContent = timeDisplay;
             const todayBtn = document.getElementById('todayBtn'), startBtn = document.getElementById('startTimerBtn');
-            if (todayPlan.completed) { todayBtn.innerHTML = '✓ Completed'; todayBtn.className = 'btn btn-success'; startBtn.textContent = '⏱️ Re-read'; }
-            else { todayBtn.innerHTML = '✓ Mark Complete'; todayBtn.className = 'btn btn-primary'; startBtn.textContent = timerState.isActive && timerState.dayNum === today ? '⏱️ View Timer' : '⏱️ Timer'; }
+            const readNowBtn = document.getElementById('readNowBtn');
+            if (todayPlan.completed) {
+                todayBtn.innerHTML = '\u2713 Completed'; todayBtn.className = 'btn btn-success';
+                startBtn.style.display = 'none';
+                if (readNowBtn) { readNowBtn.textContent = '\uD83D\uDCD6 Re-read'; readNowBtn.className = 'btn btn-secondary'; }
+            } else {
+                todayBtn.innerHTML = '\u2713 Mark Complete'; todayBtn.className = 'btn btn-secondary';
+                startBtn.style.display = ''; startBtn.textContent = timerState.isActive && timerState.dayNum === today ? '\u23F1 View Timer' : '\u23F1 Timer';
+                if (readNowBtn) { readNowBtn.textContent = '\uD83D\uDCD6 Read Now'; readNowBtn.className = 'btn btn-primary'; }
+            }
             const contextBox = document.getElementById('todayContext');
             if (todayPlan.aiContext) contextBox.innerHTML = formatAIResponse(todayPlan.aiContext);
         }
@@ -1943,7 +2161,7 @@
             const item = document.createElement('div');
             item.className = `reading-item${day.completed?' completed':''}${isToday?' today':''}${isMissed?' missed':''}${hasTimer?' has-timer':''}`;
             const estTime = getEstimatedReadingTime(day.chapters), actualTime = day.totalReadingTimeMs > 0 ? formatDuration(day.totalReadingTimeMs) : null;
-            item.innerHTML = `<div class="day-number">${day.day}</div><div class="reading-info"><div class="reading-passage">${day.reading} ${isToday?'<span class="badge badge-today" style="font-size:0.6rem;">TODAY</span>':''} ${hasTimer?'<span class="badge badge-timer" style="font-size:0.6rem;">TIMER</span>':''}</div><div class="reading-meta"><span>📖 ${day.chapters} ch</span><span>⏱️ ~${estTime}m</span>${actualTime?`<span class="actual-time">✓ ${actualTime}</span>`:''}</div></div><div class="reading-actions"><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();startTimerForDay(${day.day})" title="Start Timer">⏱️</button></div><div class="checkbox" onclick="toggleDay(${day.day})">${day.completed?'✓':''}</div>`;
+            item.innerHTML = `<div class="day-number">${day.day}</div><div class="reading-info"><div class="reading-passage">${day.reading} ${isToday?'<span class="badge badge-today" style="font-size:0.6rem;">TODAY</span>':''} ${hasTimer?'<span class="badge badge-timer" style="font-size:0.6rem;">TIMER</span>':''}</div><div class="reading-meta"><span>📖 ${day.chapters} ch</span><span>⏱️ ~${estTime}m</span>${actualTime?`<span class="actual-time">✓ ${actualTime}</span>`:''}</div></div><div class="reading-actions"><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();navigateToReading(${day.day})" title="Read Now">\uD83D\uDCD6</button><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();startTimerForDay(${day.day})" title="Start Timer">\u23F1</button></div><div class="checkbox" onclick="toggleDay(${day.day})">${day.completed?'✓':''}</div>`;
             list.appendChild(item);
         });
     }
@@ -2024,6 +2242,7 @@
         updateTimerIndicators();
         if (tabId === 'timer' && timerState.isActive) updateTimerUI();
         if (tabId === 'chat-tab') setTimeout(() => document.getElementById('chatInput')?.focus(), 100);
+        if (tabId === 'bible-reader') updateReaderSessionBar();
     }
 
     function setFilter(filter) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${filter}"]`).classList.add('active'); renderReadings(); }
