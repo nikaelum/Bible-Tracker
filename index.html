@@ -1116,43 +1116,58 @@
         }
     }
 
-    async function loadBibleText() {
-        const bookIdx = document.getElementById('bibleBookSelect').value;
-        const chapter = document.getElementById('bibleChapterSelect').value;
-        if (bookIdx === '' || chapter === '') return;
+async function loadBibleText() {
+    const bookIdx = document.getElementById('bibleBookSelect').value;
+    const chapter = document.getElementById('bibleChapterSelect').value;
+    if (bookIdx === '' || chapter === '') return;
 
-        const book = bibleBooks[parseInt(bookIdx)];
-        const content = document.getElementById('bibleTextContent');
-        content.innerHTML = '<div class="bible-loading"><span class="loading-dots">Loading</span></div>';
+    const book = bibleBooks[parseInt(bookIdx)];
+    const content = document.getElementById('bibleTextContent');
+    content.innerHTML = '<div class="bible-loading"><span class="loading-dots">Loading</span></div>';
 
-        try {
-            // Using bible-api.com (free, WEB translation by default)
-            // For NLT/NIV, route through your backend: /api/bible?book=...&chapter=...&version=nlt
-            let url;
-            if (currentBibleVersion === 'web') {
-                url = `https://bible-api.com/${encodeURIComponent(book.name)}+${chapter}`;
-            } else {
-                // Route copyrighted versions through your own backend proxy
-                url = `/api/bible?book=${encodeURIComponent(book.name)}&chapter=${chapter}&version=${currentBibleVersion}`;
-            }
+    try {
+        let url;
+        let data;
 
+        if (currentBibleVersion === 'web') {
+            // Standard public API for WEB
+            url = `https://bible-api.com/${encodeURIComponent(book.name)}+${chapter}`;
             const response = await fetch(url);
-            const data = await response.json();
-
+            data = await response.json();
+            
             if (data.verses) {
-                content.innerHTML = data.verses.map(v =>
+                content.innerHTML = data.verses.map(v => 
                     `<div class="verse"><span class="verse-num">${v.verse}</span>${v.text}</div>`
                 ).join('');
-            } else if (data.text) {
-                content.innerHTML = `<div class="verse">${data.text}</div>`;
-            } else {
-                throw new Error('No text returned');
             }
-        } catch (err) {
-            console.error('Bible API Error:', err);
-            content.innerHTML = `<div class="bible-loading"><p>⚠️ Could not load text.</p><p style="font-size:0.85rem; color:var(--txt2); margin-top:8px;">Check your connection or try the WEB version.</p></div>`;
+        } else {
+            // Use BollyBible API for NLT and NIV (Free and supports these versions)
+            // Note: NLT is 'nlt', NIV is 'niv'
+            url = `https://bollybible.pythonanywhere.com/api/v1/passage/${currentBibleVersion.toUpperCase()}/${encodeURIComponent(book.name)}/${chapter}/`;
+            
+            const response = await fetch(url);
+            data = await response.json();
+
+            if (data.data && data.data.length > 0) {
+                content.innerHTML = data.data.map(v => 
+                    `<div class="verse"><span class="verse-num">${v.verse}</span>${v.text}</div>`
+                ).join('');
+            } else {
+                throw new Error('Version not found');
+            }
         }
+
+    } catch (err) {
+        console.error('Bible API Error:', err);
+        content.innerHTML = `
+            <div class="bible-loading">
+                <p>⚠️ Error loading ${currentBibleVersion.toUpperCase()}.</p>
+                <p style="font-size:0.85rem; color:var(--txt2); margin-top:8px;">
+                    This version might be temporarily unavailable. Try WEB or check your connection.
+                </p>
+            </div>`;
     }
+}
 
     function setBibleVersion(version) {
         currentBibleVersion = version;
