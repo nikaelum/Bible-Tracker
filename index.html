@@ -295,45 +295,11 @@
         .book-block.current { border-color: var(--warn); box-shadow: 0 0 10px var(--pri-bg); color: var(--warn); }
         .book-block.in-progress { background: linear-gradient(90deg, var(--success) var(--progress), transparent var(--progress)); border-color: var(--success); }
 
-        /* ===== CHAT TAB (Full-Screen Dedicated Tab) ===== */
-        #chat-tab .chat-container {
-            display: flex; flex-direction: column;
-            height: calc(100vh - 280px); min-height: 400px;
-            background: var(--card-bg); border: 1px solid var(--card-brd);
-            border-radius: var(--rad); backdrop-filter: var(--glass-blur);
-            overflow: hidden; box-shadow: var(--sh-glow);
-        }
-        #chat-tab .chat-header {
-            background: var(--pri-bg); border-bottom: 1px solid var(--pri); color: var(--pri);
-            padding: 16px 20px; font-family: var(--font-sans); font-size: 0.85rem;
-            text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        #chat-tab .chat-header-left { display: flex; align-items: center; gap: 8px; }
-        .chat-clear-btn {
-            background: none; border: 1px solid var(--card-brd); color: var(--txt2);
-            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
-            font-size: 1rem; display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s;
-        }
-        .chat-clear-btn:hover { border-color: var(--danger); color: var(--danger); transform: rotate(180deg); }
-        #chat-tab .chat-messages {
-            flex: 1; overflow-y: auto; padding: 20px; display: flex;
-            flex-direction: column; gap: 16px;
-        }
+        /* ===== CHAT TAB ===== */
         .chat-msg { max-width: 85%; padding: 12px 16px; border-radius: var(--rad-sm); font-size: 0.95rem; font-family: var(--font-serif); line-height: 1.6; word-wrap: break-word; }
         .chat-msg.user { align-self: flex-end; background: var(--pri); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px var(--pri-bg); }
         .chat-msg.ai { align-self: flex-start; background: var(--input-bg); border: 1px solid var(--card-brd); color: var(--txt); border-bottom-left-radius: 4px; }
         .chat-msg.error { background: rgba(184,92,92,0.1); color: var(--danger); border: 1px solid var(--danger); text-align: center; font-size: 0.8rem; align-self: center; }
-        #chat-tab .chat-input-row {
-            display: flex; gap: 8px; padding: 16px; background: var(--card-bg);
-            border-top: 1px solid var(--card-brd); align-items: center;
-        }
-        #chat-tab .chat-input-row input {
-            padding: 12px 16px; border-radius: var(--rad-pill); flex: 1;
-            border: 1px solid var(--card-brd); background: var(--input-bg); color: var(--txt);
-        }
-        #chat-tab .chat-input-row button.btn { padding: 0 24px; border-radius: var(--rad-pill); margin-top: 0; height: 44px; }
 
         /* ===== BIBLE READER TAB ===== */
         .bible-reader-toolbar {
@@ -504,10 +470,10 @@
             .floating-timer { bottom: calc(80px + env(safe-area-inset-bottom)); left: 12px; right: 12px; min-width: auto; padding: 14px 16px; border-radius: 16px; }
             .floating-timer-display { font-size: 1.6rem; }
             .floating-timer-passage { font-size: 0.7rem; }
-            #chat-tab .chat-container { height: calc(100vh - 260px); }
+            #chat-tab .chat-tab-container { height: calc(100vh - 260px); }
             .chat-msg { font-size: 0.88rem; padding: 10px 14px; }
-            #chat-tab .chat-input-row { padding: 12px; }
-            #chat-tab .chat-input-row input { padding: 10px 14px; font-size: 0.9rem; }
+            #chat-tab .chat-tab-input-row { padding: 12px; }
+            #chat-tab .chat-tab-input-row input { padding: 10px 14px; font-size: 0.9rem; }
             .reading-item { padding: 14px 12px; gap: 12px; }
             .day-number { width: 38px; height: 38px; font-size: 0.8rem; }
             .reading-passage { font-size: 0.95rem; }
@@ -561,6 +527,112 @@
             .tab-btn { padding: 6px 0; }
             .timer-display { font-size: 3rem; margin: 16px 0; }
             .modal-content { max-height: 85vh; }
+        }
+
+        /* ===== NEW BIBLE READER STYLES (API-backed) ===== */
+        .bible-reader-controls {
+            display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;
+        }
+        .bible-reader-controls select {
+            flex: 1; min-width: 120px; padding: 12px; font-size: 0.9rem;
+        }
+        .version-toggle {
+            display: flex; gap: 0; border-radius: var(--rad-pill); overflow: hidden;
+            border: 1px solid var(--card-brd);
+        }
+        .version-btn {
+            padding: 10px 20px; border: none; background: var(--input-bg);
+            color: var(--txt2); cursor: pointer; font-size: 0.75rem;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+            transition: all 0.3s; font-family: var(--font-sans);
+        }
+        .version-btn.active {
+            background: var(--pri); color: #fff;
+        }
+        .version-btn:hover:not(.active) {
+            background: var(--pri-bg); color: var(--pri);
+        }
+        .bible-text-controls {
+            display: flex; gap: 8px; align-items: center; margin-bottom: 16px;
+            justify-content: space-between; flex-wrap: wrap;
+        }
+        .font-control-group {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .font-control-group label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--txt2);
+        }
+        .font-btn {
+            width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--card-brd);
+            background: var(--input-bg); color: var(--txt); cursor: pointer;
+            font-size: 1rem; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .font-btn:hover { border-color: var(--pri); color: var(--pri); }
+        .font-style-select {
+            padding: 8px 12px; min-width: 100px; font-size: 0.85rem;
+        }
+        .bible-text-area {
+            padding: 24px; background: var(--input-bg); border: 1px solid var(--card-brd);
+            border-radius: var(--rad-sm); min-height: 300px; line-height: 1.9;
+            font-family: var(--font-serif); font-size: 1.1rem; color: var(--txt);
+            overflow-y: auto; max-height: 60vh; position: relative;
+            -webkit-user-select: text; user-select: text;
+        }
+        .bible-text-area p { margin-bottom: 12px; }
+        .bible-text-area .v {
+            font-size: 0.7em; vertical-align: super; color: var(--pri);
+            font-weight: 700; margin-right: 3px; font-family: var(--font-sans);
+        }
+        .bible-copyright {
+            font-size: 0.7rem; color: var(--txt3); margin-top: 12px;
+            padding: 12px; background: var(--input-bg); border-radius: var(--rad-sm);
+            text-align: center; font-style: italic;
+        }
+        .bible-nav-row {
+            display: flex; justify-content: space-between; margin-top: 16px;
+        }
+
+        /* Chat Tab (full-screen tab container) */
+        #chat-tab .chat-tab-container {
+            display: flex; flex-direction: column; height: calc(100vh - 220px);
+            max-height: 700px;
+        }
+        #chat-tab .chat-tab-header {
+            background: var(--pri-bg); border-bottom: 1px solid var(--pri);
+            color: var(--pri); padding: 16px 20px; font-family: var(--font-sans);
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px;
+            font-weight: 600; display: flex; justify-content: space-between;
+            align-items: center; border-radius: var(--rad) var(--rad) 0 0;
+        }
+        #chat-tab .chat-tab-messages {
+            flex: 1; overflow-y: auto; padding: 20px; display: flex;
+            flex-direction: column; gap: 16px; background: var(--card-bg);
+            border-left: 1px solid var(--card-brd); border-right: 1px solid var(--card-brd);
+        }
+        #chat-tab .chat-tab-input-row {
+            display: flex; gap: 8px; padding: 16px; background: var(--card-bg);
+            border: 1px solid var(--card-brd); border-top: 1px solid var(--card-brd);
+            border-radius: 0 0 var(--rad) var(--rad); align-items: center;
+        }
+        #chat-tab .chat-tab-input-row input {
+            padding: 12px 16px; border-radius: var(--rad-pill); flex: 1;
+            border: 1px solid var(--card-brd); background: var(--input-bg); color: var(--txt);
+        }
+        #chat-tab .chat-tab-input-row button.btn { padding: 0 24px; border-radius: var(--rad-pill); height: 44px; }
+        .clear-chat-btn {
+            background: none; border: none; color: var(--pri); font-size: 1.1rem;
+            cursor: pointer; transition: all 0.3s; padding: 4px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .clear-chat-btn:hover { transform: rotate(180deg); color: var(--danger); }
+
+        @media (max-width: 480px) {
+            .bible-reader-controls { flex-direction: column; }
+            .bible-reader-controls select { width: 100%; }
+            .bible-text-area { font-size: 1rem; padding: 16px; max-height: 50vh; }
+            #chat-tab .chat-tab-container { height: calc(100vh - 200px); }
         }
     </style>
 </head>
@@ -640,58 +712,83 @@
             </div>
         </section>
 
-        <!-- Bible Reader Tab (NEW - Feature 1) -->
+        <!-- Bible Reader Tab -->
         <section id="bible-reader" class="tab-panel">
-            <div class="glass-card" style="padding:0; overflow:hidden;">
-                <div class="bible-reader-toolbar">
+            <div class="glass-card">
+                <div class="section-header" style="margin-top:0;">
+                    <h3 class="serif">📖 Bible Reader</h3>
+                </div>
+
+                <!-- Version Toggle -->
+                <div class="version-toggle" style="margin-bottom: 16px;">
+                    <button class="version-btn active" onclick="switchBibleVersion('NLT')" data-version="NLT">NLT</button>
+                    <button class="version-btn" onclick="switchBibleVersion('NIV')" data-version="NIV">NIV</button>
+                    <button class="version-btn" onclick="switchBibleVersion('KJV')" data-version="KJV">KJV</button>
+                    <button class="version-btn" onclick="switchBibleVersion('ESV')" data-version="ESV">ESV</button>
+                </div>
+
+                <!-- Book & Chapter Selectors -->
+                <div class="bible-reader-controls">
                     <select id="bibleBookSelect" onchange="onBibleBookChange()">
-                        <option value="">Book...</option>
+                        <option value="">Select Book...</option>
                     </select>
-                    <select id="bibleChapterSelect" onchange="loadBibleText()">
-                        <option value="">Ch...</option>
+                    <select id="bibleChapterSelect" onchange="loadBibleChapter()">
+                        <option value="">Ch.</option>
                     </select>
-                    <div class="bible-version-toggle">
-                        <button class="active" data-version="web" onclick="setBibleVersion('web')">WEB</button>
-                        <button data-version="nlt" onclick="setBibleVersion('nlt')">NLT</button>
-                        <button data-version="niv" onclick="setBibleVersion('niv')">NIV</button>
+                </div>
+
+                <!-- Typography Controls -->
+                <div class="bible-text-controls">
+                    <div class="font-control-group">
+                        <label>Size</label>
+                        <button class="font-btn" onclick="adjustReaderFontSize(-1)">A-</button>
+                        <button class="font-btn" onclick="adjustReaderFontSize(1)">A+</button>
                     </div>
-                    <div class="bible-typography-controls">
-                        <button onclick="adjustBibleFontSize(-1)" title="Smaller">A-</button>
-                        <button onclick="adjustBibleFontSize(1)" title="Larger">A+</button>
-                        <button id="fontStyleToggle" onclick="toggleBibleFontStyle()" title="Toggle Font">Aa</button>
+                    <div class="font-control-group">
+                        <label>Font</label>
+                        <select class="font-style-select" id="readerFontSelect" onchange="setReaderFont(this.value)">
+                            <option value="'Cormorant Garamond', Georgia, serif">Serif</option>
+                            <option value="'Outfit', system-ui, sans-serif">Sans-Serif</option>
+                            <option value="Georgia, serif">Georgia</option>
+                            <option value="'Courier New', monospace">Monospace</option>
+                        </select>
                     </div>
                 </div>
-                <div class="bible-text-content" id="bibleTextContent">
+
+                <!-- Bible Text Display -->
+                <div class="bible-text-area" id="bibleTextArea">
                     <div class="bible-loading">
-                        <p style="font-size:2rem; margin-bottom:16px;">📖</p>
-                        <p>Select a book and chapter above to start reading.</p>
+                        <p style="text-align:center;">Select a book and chapter to start reading.</p>
                     </div>
                 </div>
-                <div class="bible-nav-buttons" style="padding:16px;">
+
+                <!-- Copyright Notice -->
+                <div class="bible-copyright" id="bibleCopyright" style="display:none;"></div>
+
+                <!-- Chapter Navigation -->
+                <div class="bible-nav-row">
                     <button class="btn btn-secondary btn-small" onclick="prevBibleChapter()">← Previous</button>
                     <button class="btn btn-secondary btn-small" onclick="nextBibleChapter()">Next →</button>
                 </div>
             </div>
         </section>
 
-        <!-- Chat Tab (NEW - Feature 4: Dedicated AI Assistant Tab) -->
+        <!-- AI Chat Tab -->
         <section id="chat-tab" class="tab-panel">
-            <div class="chat-container">
-                <div class="chat-header">
-                    <div class="chat-header-left">
+            <div class="glass-card" style="padding:0; overflow:hidden;">
+                <div class="chat-tab-container">
+                    <div class="chat-tab-header">
                         <span>🤖 Study Assistant</span>
+                        <button class="clear-chat-btn" onclick="clearChat()" title="Clear Chat">🔄</button>
                     </div>
-                    <!-- Feature 2: Clear Chat Button -->
-                    <button class="chat-clear-btn" onclick="clearChat()" title="Clear Chat">🔄</button>
-                </div>
-                <div class="chat-messages" id="chatMessages">
-                    <div class="chat-msg ai">Hi! I'm your AI Bible Study Assistant. What questions do you have about today's reading?</div>
-                </div>
-                <div class="chat-input-row">
-                    <input type="text" id="chatInput" placeholder="Ask a question..." onkeydown="handleChatKeyPress(event)">
-                    <!-- Feature 6: Voice-to-Text Mic Button -->
-                    <button type="button" class="mic-btn" onmousedown="event.preventDefault()" onclick="toggleRecording(this, 'chatInput')" title="Voice Type">🎙️</button>
-                    <button class="btn btn-primary" style="padding:0 20px;" onclick="sendChatMessage()">Ask</button>
+                    <div class="chat-tab-messages" id="chatMessages">
+                        <div class="chat-msg ai">Hi! I'm your AI Bible Study Assistant. What questions do you have about today's reading?</div>
+                    </div>
+                    <div class="chat-tab-input-row">
+                        <input type="text" id="chatInput" placeholder="Ask a question..." onkeydown="handleChatKeyPress(event)">
+                        <button type="button" class="mic-btn" onmousedown="event.preventDefault()" onclick="toggleRecording(this, 'chatInput')" title="Voice Type">🎙️</button>
+                        <button class="btn btn-primary" style="padding:0 20px;" onclick="sendChatMessage()">Ask</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -822,20 +919,20 @@
         </section>
     </div>
 
-    <!-- Bottom Tab Navigation (Updated with Bible Reader & Chat tabs) -->
+    <!-- Bottom Tab Navigation -->
     <nav class="tab-nav" role="tablist">
         <button class="tab-btn active" onclick="switchTab('dashboard')" data-tab="dashboard">
             <span class="tab-icon">📊</span><span>Home</span>
         </button>
-        <button class="tab-btn" onclick="switchTab('bible-reader')" data-tab="bible-reader">
-            <span class="tab-icon">📖</span><span>Bible</span>
-        </button>
-        <button class="tab-btn" onclick="switchTab('chat-tab')" data-tab="chat-tab">
-            <span class="tab-icon">💬</span><span>Chat</span>
-        </button>
         <button class="tab-btn" onclick="switchTab('timer')" data-tab="timer" id="timerNavTab">
             <span class="tab-icon">⏱️</span><span>Timer</span>
             <span class="timer-indicator" id="navTimerIndicator" style="display: none;"></span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('bible-reader')" data-tab="bible-reader">
+            <span class="tab-icon">📖</span><span>Read</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('chat-tab')" data-tab="chat-tab">
+            <span class="tab-icon">🤖</span><span>AI Chat</span>
         </button>
         <button class="tab-btn" onclick="switchTab('readings')" data-tab="readings">
             <span class="tab-icon">📋</span><span>Plan</span>
@@ -1050,7 +1147,7 @@
     ];
 
     // ===== TAB ORDER FOR SWIPE NAVIGATION (Feature 5) =====
-    const tabOrder = ['dashboard', 'bible-reader', 'chat-tab', 'timer', 'readings', 'map', 'achievements', 'review'];
+    const tabOrder = ['dashboard', 'timer', 'bible-reader', 'chat-tab', 'readings', 'map', 'achievements', 'review'];
 
     let state = {
         startDate: null, planType: 'oneyear', readingPlan: [], sessions: [],
@@ -1060,7 +1157,8 @@
     let timerState = { isActive: false, isRunning: false, dayNum: null, passage: null, chapters: null, startedAt: null, pausedAt: null, accumulatedMs: 0 };
     let timerInterval = null;
     let chatHistory = [];
-    let currentBibleVersion = 'web';
+    let currentBibleVersion = 'NLT';
+    let readerFontSize = 1.1;
     let selectedHighlightText = '';
 
     // ===== VOICE-TO-TEXT GLOBALS (Feature 6) =====
@@ -1095,117 +1193,128 @@
     function saveTimerState() { localStorage.setItem('bibleTrackerTimer', JSON.stringify(timerState)); }
     function clearTimerState() { timerState = { isActive: false, isRunning: false, dayNum: null, passage: null, chapters: null, startedAt: null, pausedAt: null, accumulatedMs: 0 }; saveTimerState(); }
 
-    // ===== BIBLE READER (Feature 1) =====
+    // ===== BIBLE READER (API-backed) =====
     function populateBibleBookSelector() {
         const select = document.getElementById('bibleBookSelect');
         if (!select) return;
-        select.innerHTML = '<option value="">Book...</option>';
-        bibleBooks.forEach((b, i) => {
-            select.innerHTML += `<option value="${i}">${b.name}</option>`;
+        select.innerHTML = '<option value="">Select Book...</option>';
+
+        let otGroup = document.createElement('optgroup');
+        otGroup.label = 'Old Testament';
+        let ntGroup = document.createElement('optgroup');
+        ntGroup.label = 'New Testament';
+
+        bibleBooks.forEach(book => {
+            const opt = document.createElement('option');
+            opt.value = book.name;
+            opt.textContent = book.name;
+            if (book.testament === 'OT') otGroup.appendChild(opt);
+            else ntGroup.appendChild(opt);
         });
+
+        select.appendChild(otGroup);
+        select.appendChild(ntGroup);
     }
 
     function onBibleBookChange() {
-        const bookIdx = document.getElementById('bibleBookSelect').value;
-        const chSelect = document.getElementById('bibleChapterSelect');
-        chSelect.innerHTML = '<option value="">Ch...</option>';
-        if (bookIdx === '') return;
-        const book = bibleBooks[parseInt(bookIdx)];
+        const bookName = document.getElementById('bibleBookSelect').value;
+        const chapterSelect = document.getElementById('bibleChapterSelect');
+        chapterSelect.innerHTML = '<option value="">Ch.</option>';
+        if (!bookName) return;
+
+        const book = bibleBooks.find(b => b.name === bookName);
+        if (!book) return;
+
         for (let i = 1; i <= book.chapters; i++) {
-            chSelect.innerHTML += `<option value="${i}">${i}</option>`;
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = i;
+            chapterSelect.appendChild(opt);
         }
+
+        chapterSelect.value = 1;
+        loadBibleChapter();
     }
 
-async function loadBibleText() {
-    const bookIdx = document.getElementById('bibleBookSelect').value;
-    const chapter = document.getElementById('bibleChapterSelect').value;
-    if (bookIdx === '' || chapter === '') return;
+    async function loadBibleChapter() {
+        const bookName = document.getElementById('bibleBookSelect').value;
+        const chapter = document.getElementById('bibleChapterSelect').value;
+        if (!bookName || !chapter) return;
 
-    const book = bibleBooks[parseInt(bookIdx)];
-    const content = document.getElementById('bibleTextContent');
-    content.innerHTML = '<div class="bible-loading"><span class="loading-dots">Loading</span></div>';
+        const textArea = document.getElementById('bibleTextArea');
+        if (!textArea) return;
+        textArea.innerHTML = '<div class="bible-loading"><span class="loading-dots">Loading</span></div>';
 
-    try {
-        let url;
-        let data;
+        const copyright = document.getElementById('bibleCopyright');
+        if (copyright) copyright.style.display = 'none';
 
-        if (currentBibleVersion === 'web') {
-            // Standard public API for WEB
-            url = `https://bible-api.com/${encodeURIComponent(book.name)}+${chapter}`;
-            const response = await fetch(url);
-            data = await response.json();
-            
-            if (data.verses) {
-                content.innerHTML = data.verses.map(v => 
-                    `<div class="verse"><span class="verse-num">${v.verse}</span>${v.text}</div>`
-                ).join('');
+        try {
+            const response = await fetch(`/api/bible?version=${encodeURIComponent(currentBibleVersion)}&book=${encodeURIComponent(bookName)}&chapter=${chapter}`);
+            const data = await response.json();
+
+            if (data.error) {
+                textArea.innerHTML = `<div class="bible-loading" style="flex-direction:column; gap:12px; text-align:center;">
+                    <p style="color:var(--danger); font-family:var(--font-sans); font-size:0.9rem;">⚠️ ${data.error}</p>
+                    <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
+                </div>`;
+                return;
             }
-        } else {
-            // Use BollyBible API for NLT and NIV (Free and supports these versions)
-            // Note: NLT is 'nlt', NIV is 'niv'
-            url = `https://bollybible.pythonanywhere.com/api/v1/passage/${currentBibleVersion.toUpperCase()}/${encodeURIComponent(book.name)}/${chapter}/`;
-            
-            const response = await fetch(url);
-            data = await response.json();
 
-            if (data.data && data.data.length > 0) {
-                content.innerHTML = data.data.map(v => 
-                    `<div class="verse"><span class="verse-num">${v.verse}</span>${v.text}</div>`
-                ).join('');
-            } else {
-                throw new Error('Version not found');
+            let content = data.content || '';
+            content = content
+                .replace(/<span[^>]*data-number="(\d+)"[^>]*>/g, '<span class="v">$1</span>')
+                .replace(/<span[^>]*class="v"[^>]*>(\d+)<\/span>/g, '<span class="v">$1 </span>');
+
+            textArea.innerHTML = content || '<p style="color:var(--txt2)">No content available for this chapter.</p>';
+            textArea.scrollTop = 0;
+
+            if (data.copyright && copyright) {
+                copyright.textContent = data.copyright;
+                copyright.style.display = 'block';
             }
-        }
-
-    } catch (err) {
-        console.error('Bible API Error:', err);
-        content.innerHTML = `
-            <div class="bible-loading">
-                <p>⚠️ Error loading ${currentBibleVersion.toUpperCase()}.</p>
-                <p style="font-size:0.85rem; color:var(--txt2); margin-top:8px;">
-                    This version might be temporarily unavailable. Try WEB or check your connection.
-                </p>
+        } catch (err) {
+            console.error('Bible load error:', err);
+            textArea.innerHTML = `<div class="bible-loading" style="flex-direction:column; gap:12px; text-align:center;">
+                <p style="color:var(--danger); font-family:var(--font-sans);">Failed to load Bible text.</p>
+                <p style="color:var(--txt3); font-size:0.8rem;">Check your internet connection and API configuration.</p>
+                <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
             </div>`;
-    }
-}
-
-    function setBibleVersion(version) {
-        currentBibleVersion = version;
-        document.querySelectorAll('.bible-version-toggle button').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.bible-version-toggle button[data-version="${version}"]`).classList.add('active');
-        if (document.getElementById('bibleBookSelect').value && document.getElementById('bibleChapterSelect').value) {
-            loadBibleText();
         }
     }
 
-    function adjustBibleFontSize(delta) {
-        const sizes = ['small', 'normal', 'large'];
-        let idx = sizes.indexOf(state.settings.fontSize);
-        idx = Math.max(0, Math.min(sizes.length - 1, idx + delta));
-        state.settings.fontSize = sizes[idx];
-        saveState(); applySettings();
+    // Keep loadBibleText as alias for backward compatibility
+    function loadBibleText() { loadBibleChapter(); }
+
+    function switchBibleVersion(version) {
+        currentBibleVersion = version;
+        document.querySelectorAll('.version-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.version === version);
+        });
+        const bookName = document.getElementById('bibleBookSelect').value;
+        const chapter = document.getElementById('bibleChapterSelect').value;
+        if (bookName && chapter) loadBibleChapter();
     }
 
-    function toggleBibleFontStyle() {
-        const content = document.getElementById('bibleTextContent');
-        const btn = document.getElementById('fontStyleToggle');
-        content.classList.toggle('sans-font');
-        btn.classList.toggle('active');
-    }
+    // Keep setBibleVersion as alias
+    function setBibleVersion(version) { switchBibleVersion(version); }
 
     function prevBibleChapter() {
         const chSelect = document.getElementById('bibleChapterSelect');
         const bookSelect = document.getElementById('bibleBookSelect');
         let ch = parseInt(chSelect.value);
-        if (ch > 1) { chSelect.value = ch - 1; loadBibleText(); }
-        else {
-            let bi = parseInt(bookSelect.value);
-            if (bi > 0) {
-                bi--;
-                bookSelect.value = bi;
+
+        if (ch > 1) {
+            chSelect.value = ch - 1;
+            loadBibleChapter();
+        } else {
+            const bookName = bookSelect.value;
+            const idx = bibleBooks.findIndex(b => b.name === bookName);
+            if (idx > 0) {
+                const prevBook = bibleBooks[idx - 1];
+                bookSelect.value = prevBook.name;
                 onBibleBookChange();
-                chSelect.value = bibleBooks[bi].chapters;
-                loadBibleText();
+                chSelect.value = prevBook.chapters;
+                loadBibleChapter();
             }
         }
     }
@@ -1214,23 +1323,52 @@ async function loadBibleText() {
         const chSelect = document.getElementById('bibleChapterSelect');
         const bookSelect = document.getElementById('bibleBookSelect');
         let ch = parseInt(chSelect.value);
-        let bi = parseInt(bookSelect.value);
-        const book = bibleBooks[bi];
-        if (ch < book.chapters) { chSelect.value = ch + 1; loadBibleText(); }
-        else if (bi < bibleBooks.length - 1) {
-            bi++;
-            bookSelect.value = bi;
-            onBibleBookChange();
-            chSelect.value = 1;
-            loadBibleText();
+        const bookName = bookSelect.value;
+        const book = bibleBooks.find(b => b.name === bookName);
+        if (!book) return;
+
+        if (ch < book.chapters) {
+            chSelect.value = ch + 1;
+            loadBibleChapter();
+        } else {
+            const idx = bibleBooks.findIndex(b => b.name === bookName);
+            if (idx < bibleBooks.length - 1) {
+                const nextBook = bibleBooks[idx + 1];
+                bookSelect.value = nextBook.name;
+                onBibleBookChange();
+            }
         }
     }
 
-    // ===== CHAT RESET (Feature 2) =====
+    function adjustReaderFontSize(delta) {
+        readerFontSize = Math.max(0.8, Math.min(2.0, readerFontSize + (delta * 0.1)));
+        const textArea = document.getElementById('bibleTextArea');
+        if (textArea) textArea.style.fontSize = readerFontSize + 'rem';
+    }
+
+    // Keep adjustBibleFontSize as alias
+    function adjustBibleFontSize(delta) { adjustReaderFontSize(delta); }
+
+    function setReaderFont(fontFamily) {
+        const textArea = document.getElementById('bibleTextArea');
+        if (textArea) textArea.style.fontFamily = fontFamily;
+    }
+
+    function toggleBibleFontStyle() {
+        const select = document.getElementById('readerFontSelect');
+        if (!select) return;
+        const sansValue = "'Outfit', system-ui, sans-serif";
+        const serifValue = "'Cormorant Garamond', Georgia, serif";
+        const isSans = document.getElementById('bibleTextArea')?.style.fontFamily === sansValue;
+        setReaderFont(isSans ? serifValue : sansValue);
+        if (select) select.value = isSans ? serifValue : sansValue;
+    }
+
+    // ===== CHAT RESET =====
     function clearChat() {
         chatHistory = [];
         const msgs = document.getElementById('chatMessages');
-        msgs.innerHTML = '<div class="chat-msg ai">Hi! I\'m your AI Bible Study Assistant. What questions do you have about today\'s reading?</div>';
+        if (msgs) msgs.innerHTML = '<div class="chat-msg ai">Chat cleared. How can I help you with your Bible study?</div>';
     }
 
     // ===== HIGHLIGHT-TO-ASK (Feature 3) =====
@@ -1244,7 +1382,7 @@ async function loadBibleText() {
     }
 
     function handleTextSelection(e) {
-        const bibleContent = document.getElementById('bibleTextContent');
+        const bibleContent = document.getElementById('bibleTextArea');
         if (!bibleContent) return;
 
         const selection = window.getSelection();
