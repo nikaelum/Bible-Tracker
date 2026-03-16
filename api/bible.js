@@ -1,4 +1,6 @@
-// /api/bible.js — v2 with debugging + free fallback
+// /api/bible.js — v3
+// Fixed: uses correct endpoint https://api.scripture.api.bible (same as rest.api.bible)
+// and correct api-key header format.
 
 const BOOK_ID_MAP = {
     "Genesis":"GEN","Exodus":"EXO","Leviticus":"LEV","Numbers":"NUM",
@@ -20,7 +22,6 @@ const BOOK_ID_MAP = {
     "2 John":"2JN","3 John":"3JN","Jude":"JUD","Revelation":"REV"
 };
 
-// Mapping for the free fallback API (bible-api.com uses abbreviated names)
 const FREE_API_BOOK_MAP = {
     "Genesis":"Genesis","Exodus":"Exodus","Leviticus":"Leviticus","Numbers":"Numbers",
     "Deuteronomy":"Deuteronomy","Joshua":"Joshua","Judges":"Judges","Ruth":"Ruth",
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
 
     const { version = 'NLT', book, chapter, debug } = req.query;
 
-    // Debug mode: check if key is configured
+    // ── Debug mode ──────────────────────────────────────────────────────────
     if (debug === 'true') {
         const key = process.env.BIBLE_API_KEY;
         return res.status(200).json({
@@ -60,10 +61,9 @@ export default async function handler(req, res) {
             keyPreview: key ? key.substring(0, 4) + '...' + key.substring(key.length - 4) : 'NOT SET',
             nltId: process.env.NLT_BIBLE_ID || 'not set (using default)',
             nivId: process.env.NIV_BIBLE_ID || 'not set (using default)',
-            kvjId: process.env.KJV_BIBLE_ID || 'not set (using default)',
+            kjvId: process.env.KJV_BIBLE_ID || 'not set (using default)',
             esvId: process.env.ESV_BIBLE_ID || 'not set (using default)',
-            availableVersions: ['NLT', 'NIV', 'KJV', 'ESV', 'WEB (free fallback)'],
-            tip: 'If keyConfigured is false, add BIBLE_API_KEY to Vercel env vars and redeploy.'
+            note: 'API endpoint: https://api.scripture.api.bible/v1'
         });
     }
 
@@ -71,53 +71,47 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required params: book and chapter' });
     }
 
-    const BIBLE_API_KEY = process.env.BIBLE_API_KEY;
+    const BIBLE_API_KEY = process.env.BIBLE_API_KEY ? process.env.BIBLE_API_KEY.trim() : null;
 
-    // ============================================
-    // STRATEGY: Try API.Bible first. If no key or 
-    // it fails, fall back to free bible-api.com
-    // ============================================
+    // Copyrighted versions require API.Bible key
+    const requiresKey = ['NLT', 'NIV', 'ESV'].includes(version);
 
-    // If we have an API key, try API.Bible (supports NLT, NIV, ESV, KJV)
-    if (BIBLE_API_KEY && BIBLE_API_KEY.trim().length > 0) {
-        const result = await tryApiBible(BIBLE_API_KEY.trim(), version, book, chapter);
-        if (result.success) {
-            return res.status(200).json(result.data);
-        }
-        // If API.Bible failed, log the error and try fallback
+    if (requiresKey && !BIBLE_API_KEY) {
+        return res.status(400).json({
+            error: `${version} is a copyrighted translation that requires an API.Bible key. Please configure BIBLE_API_KEY in your Vercel environment variables, or switch to KJV/WEB (free).`,
+            setupUrl: 'https://scripture.api.bible',
+            hint: 'Visit /api/bible?debug=true to check your configuration.'
+        });
+    }
+
+    // Try API.Bible for licensed versions (NLT, NIV, ESV, KJV)
+    if (BIBLE_API_KEY) {
+        const result = await tryApiBible(BIBLE_API_KEY, version, book, chapter);
+        if (result.success) return res.status(200).json(result.data);
+
         console.error('API.Bible failed:', result.error);
-        
-        // For NLT/NIV specifically, we can't fall back to free APIs (copyrighted)
-        if (version === 'NLT' || version === 'NIV' || version === 'ESV') {
-            return res.status(result.status || 500).json({ 
+
+        if (requiresKey) {
+            return res.status(result.status || 500).json({
                 error: result.error,
                 hint: `${version} requires a valid API.Bible key. Visit /api/bible?debug=true to check your configuration.`
             });
         }
-    }
-
-    // No API key or using a free version — use free fallback
-    if (!BIBLE_API_KEY && (version === 'NLT' || version === 'NIV' || version === 'ESV')) {
-        return res.status(400).json({
-            error: `${version} is a copyrighted translation that requires an API.Bible key. Please configure BIBLE_API_KEY in your Vercel environment variables, or switch to KJV/WEB (free).`,
-            setupUrl: 'https://scripture.api.bible',
-            debugUrl: '/api/bible?debug=true'
-        });
+        // KJV failed via API.Bible — fall through to free API
     }
 
     // Free fallback for KJV and WEB
     const freeResult = await tryFreeApi(version, book, chapter);
-    if (freeResult.success) {
-        return res.status(200).json(freeResult.data);
-    }
+    if (freeResult.success) return res.status(200).json(freeResult.data);
 
     return res.status(500).json({ error: freeResult.error });
 }
 
-// ===== API.Bible (paid/licensed translations) =====
+// ── API.Bible (licensed translations) ───────────────────────────────────────
 async function tryApiBible(apiKey, version, book, chapter) {
+    // Bible IDs — override via env vars if the defaults don't work for your account
     const versionMap = {
-        'NLT': process.env.NLT_BIBLE_ID || '65eec8e0b60e656b-01',
+        'NLT': process.env.NLT_BIBLE_ID || 'd6e14a625393b4da-01',  // updated default from your dashboard
         'NIV': process.env.NIV_BIBLE_ID || '78a9f6124f344018-01',
         'KJV': process.env.KJV_BIBLE_ID || 'de4e12af7f28f599-02',
         'ESV': process.env.ESV_BIBLE_ID || '01b29f4b342acc35-01',
@@ -134,40 +128,45 @@ async function tryApiBible(apiKey, version, book, chapter) {
     }
 
     const chapterId = `${bookId}.${chapter}`;
+
+    // ── CORRECT endpoint: api.scripture.api.bible ────────────────────────────
     const apiUrl = `https://api.scripture.api.bible/v1/bibles/${bibleId}/chapters/${chapterId}?content-type=html&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true`;
 
     try {
         const response = await fetch(apiUrl, {
-            headers: { 'api-key': apiKey }
+            headers: {
+                'api-key': apiKey  // header name must be exactly 'api-key' (lowercase)
+            }
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
             let parsedError = '';
-            try { parsedError = JSON.parse(errorText).message || errorText; } catch { parsedError = errorText; }
+            try {
+                const errorBody = await response.json();
+                parsedError = errorBody.message || errorBody.error || JSON.stringify(errorBody);
+            } catch {
+                parsedError = await response.text();
+            }
 
             if (response.status === 401) {
-                return { 
-                    success: false, 
-                    status: 401, 
-                    error: `API key is invalid. Go to scripture.api.bible → My Apps → copy the correct key → paste into Vercel env var BIBLE_API_KEY → redeploy. Raw error: ${parsedError}` 
+                return {
+                    success: false, status: 401,
+                    error: `API key rejected (401). Go to scripture.api.bible → My Apps → copy your key exactly → update BIBLE_API_KEY in Vercel → redeploy. Server said: ${parsedError}`
                 };
             }
             if (response.status === 403) {
-                return { 
-                    success: false, 
-                    status: 403, 
-                    error: `Your API.Bible account doesn't have access to ${version}. Log in to scripture.api.bible → your app → check which Bibles are available. The ${version} ID being used is: ${bibleId}` 
+                return {
+                    success: false, status: 403,
+                    error: `Access denied to ${version} (403). Your account may not have access to Bible ID: ${bibleId}. Log in to scripture.api.bible → your app → Bibles to find your available IDs, then set ${version}_BIBLE_ID in Vercel env vars.`
                 };
             }
             if (response.status === 404) {
-                return { 
-                    success: false, 
-                    status: 404, 
-                    error: `${book} chapter ${chapter} not found in ${version} (Bible ID: ${bibleId}). This ID may be wrong. Set the correct one via ${version}_BIBLE_ID env var.` 
+                return {
+                    success: false, status: 404,
+                    error: `${book} chapter ${chapter} not found (404) using Bible ID: ${bibleId}. Set the correct ID via ${version}_BIBLE_ID in Vercel env vars.`
                 };
             }
-            return { success: false, status: response.status, error: `API.Bible error ${response.status}: ${parsedError}` };
+            return { success: false, status: response.status, error: `API.Bible returned ${response.status}: ${parsedError}` };
         }
 
         const data = await response.json();
@@ -178,9 +177,9 @@ async function tryApiBible(apiKey, version, book, chapter) {
                 content: data.data.content || '',
                 reference: data.data.reference || `${book} ${chapter}`,
                 copyright: data.data.copyright || `${version} — via API.Bible`,
-                version: version,
-                bookId: bookId,
-                chapter: chapter,
+                version,
+                bookId,
+                chapter,
                 source: 'api.bible'
             }
         };
@@ -190,52 +189,38 @@ async function tryApiBible(apiKey, version, book, chapter) {
     }
 }
 
-// ===== Free fallback: bible-api.com (KJV, ASV, WEB) =====
+// ── Free fallback: bible-api.com (KJV, WEB — public domain) ─────────────────
 async function tryFreeApi(version, book, chapter) {
-    // bible-api.com supports: KJV, ASV, BBE, DARBY, WEB, YLT, OEB (and more)
-    // Map our version names to theirs
-    const freeVersionMap = {
-        'KJV': 'kjv',
-        'WEB': 'web',       // World English Bible (modern, readable, free)
-        'ASV': 'asv',
-        'BBE': 'bbe',       // Bible in Basic English
-    };
-
-    // Default to WEB if version not available in free API
+    const freeVersionMap = { 'KJV': 'kjv', 'WEB': 'web', 'ASV': 'asv' };
     const freeVersion = freeVersionMap[version] || 'web';
-    const actualVersionName = freeVersion === 'web' ? 'WEB' : version;
-    
+    const displayVersion = freeVersion.toUpperCase();
+
     const bookName = FREE_API_BOOK_MAP[book] || book;
     const apiUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${freeVersion}`;
 
     try {
         const response = await fetch(apiUrl);
-        
         if (!response.ok) {
             return { success: false, error: `Free Bible API error: ${response.status}` };
         }
 
         const data = await response.json();
-
         if (data.error) {
             return { success: false, error: `Free API: ${data.error}` };
         }
 
-        // Convert the verse array to HTML
         let htmlContent = '';
         if (data.verses && data.verses.length > 0) {
-            htmlContent = data.verses.map(v => 
+            htmlContent = data.verses.map(v =>
                 `<p><span class="v">${v.verse}</span>${v.text.trim()}</p>`
             ).join('');
         } else if (data.text) {
             htmlContent = `<p>${data.text}</p>`;
         }
 
-        const copyrightNote = freeVersion === 'web' 
-            ? 'World English Bible (WEB) — Public Domain. Free fallback; configure API.Bible key for NLT/NIV.'
-            : freeVersion === 'kjv'
+        const copyrightNote = freeVersion === 'kjv'
             ? 'King James Version (KJV) — Public Domain.'
-            : `${actualVersionName} — Public Domain.`;
+            : 'World English Bible (WEB) — Public Domain.';
 
         return {
             success: true,
@@ -243,9 +228,9 @@ async function tryFreeApi(version, book, chapter) {
                 content: htmlContent,
                 reference: data.reference || `${book} ${chapter}`,
                 copyright: copyrightNote,
-                version: actualVersionName,
+                version: displayVersion,
                 bookId: BOOK_ID_MAP[book] || '',
-                chapter: chapter,
+                chapter,
                 source: 'bible-api.com (free)'
             }
         };
