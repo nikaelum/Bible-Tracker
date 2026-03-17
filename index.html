@@ -608,14 +608,14 @@
             color: var(--txt); line-height: 1.1;
         }
 
-        /* Bible Text Area — full page, no box */
+        /* Bible Text Area */
         .bible-text-area {
             padding: 0 4px 48px; background: transparent; border: none;
             box-shadow: none; border-radius: 0; min-height: 50vh; max-height: none;
             overflow-y: visible; font-family: 'Cormorant Garamond', Georgia, serif;
             font-size: 1.35rem; font-weight: 400; color: var(--txt);
             line-height: 2.15; letter-spacing: 0.01em;
-            -webkit-user-select: text; user-select: text; transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease;
         }
         .bible-text-area.loading { opacity: 0.3; }
         @keyframes verseFadeIn {
@@ -623,6 +623,22 @@
             to   { opacity: 1; transform: translateY(0); }
         }
         .bible-text-area.loaded { animation: verseFadeIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        
+        /* Verses Selection Overrides */
+        .verse-span {
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s, border-color 0.2s;
+            padding: 0 2px;
+        }
+        .verse-span:hover {
+            background-color: var(--pri-bg);
+        }
+        .verse-span.selected {
+            background-color: var(--pri-bg);
+            border-bottom: 2px dashed var(--pri);
+        }
+
         .bible-text-area p { margin-bottom: 0.75em; margin-top: 0; text-indent: 0; }
         .bible-text-area h3, .bible-text-area h4 {
             font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700;
@@ -1178,7 +1194,7 @@
         </div>
     </div>
 
-    <!-- Ask AI Tooltip (Feature 3: Highlight-to-Ask) -->
+    <!-- Ask AI Tooltip (Tap-to-Ask) -->
     <div class="ask-ai-tooltip" id="askAiTooltip" onclick="askAIAboutSelection()">Ask AI 💬</div>
 
     <!-- Settings Modal -->
@@ -1658,6 +1674,9 @@
 
         const textArea = document.getElementById('bibleTextArea');
         if (!textArea) return;
+        
+        clearVerseSelection(); // Clear selections from previous chapter
+        
         textArea.classList.add('loading');
         textArea.classList.remove('loaded');
         textArea.innerHTML = '<div class="bible-loading"><span class="loading-dots">Loading</span></div>';
@@ -1671,859 +1690,948 @@
 
             if (data.error) {
                 let errorHtml = `<div class="bible-loading" style="flex-direction:column; gap:16px; text-align:center; padding:20px;">
-                    <p style="color:var(--danger); font-family:var(--font-sans); font-size:0.9rem;">⚠️ ${data.error}</p>`;
-
-                if (data.hint) {
-                    errorHtml += `<p style="color:var(--txt2); font-family:var(--font-sans); font-size:0.8rem;">${data.hint}</p>`;
-                }
-                if (data.setupUrl) {
-                    errorHtml += `<a href="${data.setupUrl}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Get API Key</a>`;
-                }
-
-                // Offer free fallback for copyrighted versions
-                if (currentBibleVersion !== 'WEB' && currentBibleVersion !== 'KJV') {
-                    errorHtml += `<div style="margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-                        <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('KJV'); loadBibleChapter()">Try KJV (free)</button>
-                        <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('WEB'); loadBibleChapter()">Try WEB (free)</button>
-                    </div>`;
-                }
-
-                errorHtml += `<button class="btn btn-primary btn-small" style="margin-top:8px;" onclick="loadBibleChapter()">Retry ${currentBibleVersion}</button>`;
-                errorHtml += `</div>`;
-
-                textArea.innerHTML = errorHtml;
-                return;
+                    <p style="color:var(--danger);
+                    font-family:var(--font-sans); font-size:0.9rem;">⚠️ ${data.error}</p>;
+if (data.hint) {
+                errorHtml += `<p style="color:var(--txt2); font-family:var(--font-sans); font-size:0.8rem;">${data.hint}</p>`;
+            }
+            if (data.setupUrl) {
+                errorHtml += `<a href="${data.setupUrl}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Get API Key</a>`;
             }
 
-            let content = data.content || '';
-
-            // Clean up API.Bible HTML formatting
-            // Step 1: Convert verse-number spans to safe placeholders
-            content = content
-                .replace(/<span[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g, '\u00AB$1\u00BB')
-                // Step 2: Strip all remaining span tags (open + close)
-                .replace(/<\/?span[^>]*>/g, '')
-                // Step 3: Restore verse numbers with correct markup
-                .replace(/\u00AB(\d+)\u00BB/g, '<span class="v">$1</span> ')
-                // Step 4: Normalise paragraph tags (keep structure, drop classes)
-                .replace(/<p[^>]*>/g, '<p>')
-                // Step 5: Collapse excessive whitespace / newlines
-                .replace(/\n{3,}/g, '\n\n');
-
-            textArea.classList.remove('loading');
-            textArea.innerHTML = content || '<p style="color:var(--txt2)">No content available for this chapter.</p>';
-            void textArea.offsetWidth; // force reflow for animation restart
-            textArea.classList.add('loaded');
-            setTimeout(() => textArea.classList.remove('loaded'), 600);
-            textArea.scrollTop = 0;
-
-            // Update YouVersion-style chapter heading
-            const heading = document.getElementById('readerChapterHeading');
-            if (heading) {
-                heading.style.display = 'block';
-                document.getElementById('readerBookName').textContent = bookName.toUpperCase();
-                document.getElementById('readerChapterNum').textContent = chapter;
-            }
-
-            // Show bottom nav with location
-            const bottomNav = document.getElementById('readerBottomNav');
-            if (bottomNav) {
-                bottomNav.style.display = 'flex';
-                document.getElementById('readerNavLocation').textContent = bookName + ' ' + chapter;
-            }
-
-            // Show copyright with source indicator
-            if (copyright) {
-                let copyrightText = data.copyright || '';
-                if (data.source === 'bible-api.com (free)') {
-                    copyrightText += ' · Using free API (no key required)';
-                }
-                if (copyrightText) {
-                    copyright.textContent = copyrightText;
-                    copyright.style.display = 'block';
-                }
-            }
-
-        } catch (err) {
-            console.error('Bible load error:', err);
-            textArea.innerHTML = `<div class="bible-loading" style="flex-direction:column; gap:12px; text-align:center;">
-                <p style="color:var(--danger); font-family:var(--font-sans);">Failed to load Bible text.</p>
-                <p style="color:var(--txt3); font-family:var(--font-sans); font-size:0.8rem;">Check your internet connection.</p>
-                <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-                    <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
+            // Offer free fallback for copyrighted versions
+            if (currentBibleVersion !== 'WEB' && currentBibleVersion !== 'KJV') {
+                errorHtml += `<div style="margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
                     <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('KJV'); loadBibleChapter()">Try KJV (free)</button>
-                </div>
-            </div>`;
-        }
-    }
-
-    // Keep loadBibleText as alias for backward compatibility
-    function loadBibleText() { loadBibleChapter(); }
-
-    function switchBibleVersion(version) {
-        currentBibleVersion = version;
-
-        // Update settings panel version buttons
-        document.querySelectorAll('.reader-version-option').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.version === version);
-        });
-        // Backward compat
-        document.querySelectorAll('.version-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.version === version);
-        });
-        // Update version chip label
-        const chip = document.getElementById('versionChip');
-        if (chip) chip.textContent = version;
-
-        const bookName = document.getElementById('bibleBookSelect').value;
-        const chapter = document.getElementById('bibleChapterSelect').value;
-        if (bookName && chapter) loadBibleChapter();
-    }
-
-    // Keep setBibleVersion as alias
-    function setBibleVersion(version) { switchBibleVersion(version); }
-
-    function prevBibleChapter() {
-        const chSelect = document.getElementById('bibleChapterSelect');
-        const bookSelect = document.getElementById('bibleBookSelect');
-        let ch = parseInt(chSelect.value);
-
-        if (ch > 1) {
-            chSelect.value = ch - 1;
-            loadBibleChapter();
-        } else {
-            const bookName = bookSelect.value;
-            const idx = bibleBooks.findIndex(b => b.name === bookName);
-            if (idx > 0) {
-                const prevBook = bibleBooks[idx - 1];
-                bookSelect.value = prevBook.name;
-                onBibleBookChange();
-                chSelect.value = prevBook.chapters;
-                loadBibleChapter();
+                    <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('WEB'); loadBibleChapter()">Try WEB (free)</button>
+                </div>`;
             }
-        }
-    }
 
-    function nextBibleChapter() {
-        const chSelect = document.getElementById('bibleChapterSelect');
-        const bookSelect = document.getElementById('bibleBookSelect');
-        let ch = parseInt(chSelect.value);
-        const bookName = bookSelect.value;
-        const book = bibleBooks.find(b => b.name === bookName);
-        if (!book) return;
+            errorHtml += `<button class="btn btn-primary btn-small" style="margin-top:8px;" onclick="loadBibleChapter()">Retry ${currentBibleVersion}</button>`;
+            errorHtml += `</div>`;
 
-        if (ch < book.chapters) {
-            chSelect.value = ch + 1;
-            loadBibleChapter();
-        } else {
-            const idx = bibleBooks.findIndex(b => b.name === bookName);
-            if (idx < bibleBooks.length - 1) {
-                const nextBook = bibleBooks[idx + 1];
-                bookSelect.value = nextBook.name;
-                onBibleBookChange();
-            }
-        }
-    }
-
-    function adjustReaderFontSize(delta) {
-        readerFontSize = Math.max(0.8, Math.min(2.2, readerFontSize + (delta * 0.1)));
-        const textArea = document.getElementById('bibleTextArea');
-        if (textArea) textArea.style.fontSize = readerFontSize + 'rem';
-        const display = document.getElementById('readerFontSizeDisplay');
-        if (display) display.textContent = Math.round(readerFontSize * 100) + '%';
-    }
-
-    // Keep adjustBibleFontSize as alias
-    function adjustBibleFontSize(delta) { adjustReaderFontSize(delta); }
-
-    function setReaderFont(fontFamily) {
-        const textArea = document.getElementById('bibleTextArea');
-        if (textArea) textArea.style.fontFamily = fontFamily;
-    }
-
-    function toggleReaderSettings() {
-        const panel = document.getElementById('readerSettingsPanel');
-        const btn = document.getElementById('readerSettingsBtn');
-        const isHidden = panel.style.display === 'none';
-        panel.style.display = isHidden ? 'block' : 'none';
-        btn.classList.toggle('active', isHidden);
-    }
-
-    function selectReaderFont(btn) {
-        document.querySelectorAll('.reader-font-option').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        setReaderFont(btn.dataset.font);
-    }
-
-    function toggleBibleFontStyle() {
-        const select = document.getElementById('readerFontSelect');
-        if (!select) return;
-        const sansValue = "'Outfit', system-ui, sans-serif";
-        const serifValue = "'Cormorant Garamond', Georgia, serif";
-        const isSans = document.getElementById('bibleTextArea')?.style.fontFamily === sansValue;
-        setReaderFont(isSans ? serifValue : sansValue);
-        if (select) select.value = isSans ? serifValue : sansValue;
-    }
-
-    // ===== CHAT RESET =====
-    function clearChat() {
-        chatHistory = [];
-        const msgs = document.getElementById('chatMessages');
-        if (msgs) msgs.innerHTML = '<div class="chat-msg ai">Chat cleared. How can I help you with your Bible study?</div>';
-    }
-
-    // ===== HIGHLIGHT-TO-ASK (Feature 3) =====
-    function initHighlightToAsk() {
-        document.addEventListener('mouseup', handleTextSelection);
-        document.addEventListener('touchend', handleTextSelection);
-        document.addEventListener('mousedown', (e) => {
-            const tooltip = document.getElementById('askAiTooltip');
-            if (!tooltip.contains(e.target)) { tooltip.classList.remove('show'); }
-        });
-    }
-
-    function handleTextSelection(e) {
-        const bibleContent = document.getElementById('bibleTextArea');
-        if (!bibleContent) return;
-
-        const selection = window.getSelection();
-        const text = selection.toString().trim();
-
-        if (text.length > 3 && bibleContent.contains(selection.anchorNode)) {
-            selectedHighlightText = text;
-            const tooltip = document.getElementById('askAiTooltip');
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-
-            // position: fixed uses viewport coords — no scrollY needed
-            const left = Math.min(rect.left + rect.width / 2 - 50, window.innerWidth - 130);
-            const top = Math.max(10, rect.top - 45);
-
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-            tooltip.classList.add('show');
-        }
-    }
-
-    function askAIAboutSelection() {
-        const tooltip = document.getElementById('askAiTooltip');
-        tooltip.classList.remove('show');
-
-        if (selectedHighlightText) {
-            const chatInput = document.getElementById('chatInput');
-            chatInput.value = `Explain this passage: "${selectedHighlightText}"`;
-            switchTab('chat-tab');
-            setTimeout(() => chatInput.focus(), 300);
-        }
-    }
-
-    // ===== VOICE-TO-TEXT (Feature 6) =====
-    async function toggleRecording(btn, targetId) {
-        const targetInput = document.getElementById(targetId);
-
-        if (isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-            btn.textContent = '⏳';
-            btn.style.animation = 'spin 1s linear infinite';
+            textArea.innerHTML = errorHtml;
             return;
         }
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
+        let content = data.content || '';
 
-            mediaRecorder.ondataavailable = event => {
-                if (event.data.size > 0) audioChunks.push(event.data);
-            };
+        // Clean up API.Bible HTML formatting
+        // Step 1: Convert verse-number spans to safe placeholders
+        content = content
+            .replace(/<span[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g, '\u00AB$1\u00BB')
+            // Step 2: Strip all remaining span tags (open + close)
+            .replace(/<\/?span[^>]*>/g, '')
+            // Step 3: Restore verse numbers with correct markup
+            .replace(/\u00AB(\d+)\u00BB/g, '<span class="v">$1</span> ')
+            // Step 4: Normalise paragraph tags (keep structure, drop classes)
+            .replace(/<p[^>]*>/g, '<p>')
+            // Step 5: Collapse excessive whitespace / newlines
+            .replace(/\n{3,}/g, '\n\n');
 
-            mediaRecorder.onstop = async () => {
-                const audioMimeType = mediaRecorder.mimeType;
-                const audioBlob = new Blob(audioChunks, { type: audioMimeType });
-
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = async () => {
-                    const base64Audio = reader.result.split(',')[1];
-
-                    try {
-                        const response = await fetch('/api/transcribe', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ audio: base64Audio, mimeType: audioMimeType })
-                        });
-
-                        if (!response.ok) throw new Error('Transcription failed');
-                        const data = await response.json();
-
-                        const currentText = targetInput.value;
-                        const spacer = (currentText === '') ? '' : ' ';
-                        targetInput.value = currentText + spacer + data.text;
-                    } catch (error) {
-                        console.error('Transcription API Error:', error);
-                        alert('Failed to transcribe audio.');
-                    } finally {
-                        btn.textContent = '🎙️';
-                        btn.style.animation = '';
-                        btn.style.color = '';
-                        btn.style.backgroundColor = 'transparent';
-                    }
-                };
-
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            mediaRecorder.start();
-            isRecording = true;
-            btn.textContent = '⏹️';
-            btn.style.color = 'white';
-            btn.style.backgroundColor = 'var(--danger)';
-            btn.style.borderRadius = '50%';
-
-        } catch (err) {
-            console.error("Microphone access denied:", err);
-            alert('Microphone access is required to use dictation.');
-        }
-    }
-
-    // ===== AI FEATURES =====
-    function toggleContext() { document.getElementById('todayContext').classList.toggle('show'); }
-    function formatAIResponse(text) { return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
-
-    async function fetchAIContext() {
-        const today = getCurrentDay(); const plan = state.readingPlan[today - 1];
-        if (!plan) return;
-        const contextBox = document.getElementById('todayContext');
-        contextBox.innerHTML = '<span class="loading-dots">Thinking</span>'; contextBox.classList.add('show');
-        try {
-            const response = await fetch('/api/context', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passage: plan.reading }) });
-            const data = await response.json(); if (data.error) throw new Error(data.error);
-            plan.aiContext = data.context; saveState(); contextBox.innerHTML = formatAIResponse(plan.aiContext);
-        } catch (err) { console.error(err); contextBox.innerHTML = `<p style="color: var(--danger)">Unable to connect to AI Server.</p><button class="btn btn-small btn-secondary" style="margin-top:10px" onclick="fetchAIContext()">Try Again</button>`; }
-    }
-
-    function handleChatKeyPress(e) { if(e.key === 'Enter') sendChatMessage(); }
-
-    function appendChatMessage(text, sender, isTemp = false) {
-        const c = document.getElementById('chatMessages'); const m = document.createElement('div');
-        m.className = `chat-msg ${sender}`; if(isTemp) m.id = 'tempLoadingMsg';
-        m.innerHTML = formatAIResponse(text); c.appendChild(m); c.scrollTop = c.scrollHeight; return m.id;
-    }
-
-    async function sendChatMessage() {
-        const input = document.getElementById('chatInput'); const msg = input.value.trim(); if(!msg) return;
-        appendChatMessage(msg, 'user'); input.value = '';
-        appendChatMessage('<span class="loading-dots">Thinking</span>', 'ai', true);
-        const today = getCurrentDay(); const currentPassage = state.readingPlan[today - 1]?.reading || '';
-        try {
-            const response = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: msg, history: chatHistory, currentPassage }) });
-            const data = await response.json(); document.getElementById('tempLoadingMsg')?.remove();
-            if (data.error) throw new Error(data.error); appendChatMessage(data.reply, 'ai');
-            chatHistory.push({ role: "user", parts: [{ text: msg }] });
-            chatHistory.push({ role: "model", parts: [{ text: data.reply }] });
-        } catch (err) { console.error(err); document.getElementById('tempLoadingMsg')?.remove(); appendChatMessage('Server connection failed.', 'error'); }
-    }
-
-    // ===== PLAN GENERATION =====
-    function generateReadingPlan(planType, totalDays) {
-        const plan = []; let books = [...bibleBooks];
-        if (planType === 'nt30') books = bibleBooks.filter(b => b.testament === 'NT');
-        const totalChapters = books.reduce((sum, b) => sum + b.chapters, 0);
-        const chaptersPerDay = Math.ceil(totalChapters / totalDays);
-        let currentBook = 0, currentChapter = 1;
-        for (let day = 1; day <= totalDays; day++) {
-            let dayReadings = [], chaptersToday = 0, targetChapters = chaptersPerDay;
-            while (chaptersToday < targetChapters && currentBook < books.length) {
-                const book = books[currentBook], startChapter = currentChapter;
-                const remainingInBook = book.chapters - currentChapter + 1, chaptersNeeded = targetChapters - chaptersToday;
-                if (remainingInBook <= chaptersNeeded) { dayReadings.push({ book: book.name, start: startChapter, end: book.chapters, count: remainingInBook }); chaptersToday += remainingInBook; currentBook++; currentChapter = 1; }
-                else { const endChapter = currentChapter + chaptersNeeded - 1; dayReadings.push({ book: book.name, start: startChapter, end: endChapter, count: chaptersNeeded }); chaptersToday += chaptersNeeded; currentChapter = endChapter + 1; }
-            }
-            let readingStr = dayReadings.map(r => r.start === r.end ? `${r.book} ${r.start}` : `${r.book} ${r.start}-${r.end}`).join(", ");
-            const totalDayChapters = dayReadings.reduce((sum, r) => sum + r.count, 0);
-            plan.push({ day, reading: readingStr, chapters: totalDayChapters, books: dayReadings.map(r => r.book), completed: false, completedAt: null, totalReadingTimeMs: 0 });
-        }
-        return plan;
-    }
-    function getPlanDays(planType) { return { 'oneyear': 365, '90day': 90, 'nt30': 30 }[planType] || 365; }
-
-    // ===== TIMER FUNCTIONS =====
-    function restoreTimerIfActive() { if (timerState.isActive) { updateTimerUI(); updateTimerIndicators(); if (timerState.isRunning) showFloatingTimer(); } }
-    function startTimerForToday() { startTimerForDay(getCurrentDay()); }
-    function startTimerForSelectedDay() { const dayNum = parseInt(document.getElementById('daySelector').value); if (dayNum) startTimerForDay(dayNum); }
-
-    function startTimerForDay(dayNum) {
-        const plan = state.readingPlan[dayNum - 1]; if (!plan) return;
-        if (timerState.isActive && timerState.dayNum !== dayNum) { if (!confirm(`You have an active timer for Day ${timerState.dayNum}. Discard and start new?`)) return; }
-        timerState.isActive = true; timerState.isRunning = false; timerState.dayNum = dayNum; timerState.passage = plan.reading; timerState.chapters = plan.chapters;
-        timerState.startedAt = null; timerState.pausedAt = null; timerState.accumulatedMs = plan.totalReadingTimeMs || 0;
-        saveTimerState(); updateTimerUI(); switchTab('timer');
-    }
-
-    function startTimer() {
-        if (!timerState.isActive) startTimerForToday();
-        timerState.isRunning = true; timerState.startedAt = Date.now(); timerState.pausedAt = null;
-        saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
-        if (state.settings.showFloatingTimer) showFloatingTimer();
-    }
-    function pauseTimer() {
-        if (!timerState.isRunning) return;
-        timerState.accumulatedMs += Date.now() - timerState.startedAt;
-        timerState.isRunning = false; timerState.pausedAt = Date.now(); timerState.startedAt = null;
-        saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
-    }
-    function resumeTimer() {
-        if (timerState.isRunning) return;
-        timerState.isRunning = true; timerState.startedAt = Date.now(); timerState.pausedAt = null;
-        saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
-        if (state.settings.showFloatingTimer) showFloatingTimer();
-    }
-    function pauseTimerFromFloat() {
-        pauseTimer();
-        updateFloatingTimerUI();
-        const alertPause = document.getElementById('alertPauseBtn');
-        const alertResume = document.getElementById('alertResumeBtn');
-        if (alertPause) alertPause.style.display = 'none';
-        if (alertResume) alertResume.style.display = '';
-    }
-    function resumeTimerFromFloat() {
-        resumeTimer();
-        updateFloatingTimerUI();
-        const alertPause = document.getElementById('alertPauseBtn');
-        const alertResume = document.getElementById('alertResumeBtn');
-        if (alertPause) alertPause.style.display = '';
-        if (alertResume) alertResume.style.display = 'none';
-    }
-    function stopAndSaveTimer() {
-        if (!timerState.isActive) return;
-        if (timerState.isRunning) timerState.accumulatedMs += Date.now() - timerState.startedAt;
-        const totalMs = timerState.accumulatedMs, dayNum = timerState.dayNum, plan = state.readingPlan[dayNum - 1];
-        if (plan) plan.totalReadingTimeMs = totalMs;
-        saveState(); clearTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar(); hideFloatingTimer(); renderAll();
-    }
-    function discardTimer() { if (!timerState.isActive) return; if (confirm('Discard this timer session?')) { clearTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar(); hideFloatingTimer(); } }
-
-    function completeReading() {
-        if (!timerState.isActive) return;
-        if (timerState.isRunning) timerState.accumulatedMs += Date.now() - timerState.startedAt;
-        const totalMs = timerState.accumulatedMs, dayNum = timerState.dayNum, plan = state.readingPlan[dayNum - 1];
-        const session = { id: Date.now(), dayNum, passage: timerState.passage, chapters: timerState.chapters, durationMs: totalMs, date: new Date().toISOString() };
-        state.sessions.push(session);
-        if (plan) { plan.totalReadingTimeMs = totalMs; plan.completed = true; plan.completedAt = new Date().toISOString(); }
-        state.stats.timerSessions++;
-        const estimatedMs = getEstimatedReadingTime(timerState.chapters) * 60000;
-        if (totalMs < estimatedMs) state.stats.fasterSessions++;
-        saveState(); showTimerCompleteModal(session, estimatedMs);
-        clearTimerState(); updateTimerUI(); updateTimerIndicators(); hideFloatingTimer(); renderAll();
-    }
-
-    function getCurrentTimerMs() { if (!timerState.isActive) return 0; let total = timerState.accumulatedMs; if (timerState.isRunning && timerState.startedAt) total += Date.now() - timerState.startedAt; return total; }
-    function formatTime(ms) { const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
-    function formatDuration(ms) { const m = Math.floor(ms/60000), h = Math.floor(m/60), mins = m%60; return h > 0 ? `${h}h ${mins}m` : `${mins}m`; }
-
-    function updateAllTimerDisplays() {
-        if (!timerState.isActive) return;
-        const currentMs = getCurrentTimerMs(), timeStr = formatTime(currentMs);
-        const md = document.getElementById('timerDisplay'); if (md) md.textContent = timeStr;
-        const fd = document.getElementById('floatingTimerDisplay'); if (fd) fd.textContent = timeStr;
-        const ad = document.getElementById('alertTimerDisplay'); if (ad) ad.textContent = timeStr;
-        const sd = document.getElementById('sessionTimerDisplay'); if (sd) sd.textContent = formatTimeShort(currentMs);
-        if (timerState.chapters) {
-            const est = getEstimatedReadingTime(timerState.chapters) * 60000, diff = currentMs - est;
-            document.getElementById('comparisonEstimated').textContent = formatDuration(est);
-            document.getElementById('comparisonActual').textContent = formatDuration(currentMs);
-            const d = document.getElementById('comparisonDiff');
-            if (diff < 0) { d.textContent = `${Math.abs(Math.floor(diff/60000))}m ahead`; d.className = 'value faster'; d.style.color = 'var(--success)'; }
-            else { d.textContent = `${Math.floor(diff/60000)}m over`; d.className = 'value slower'; d.style.color = 'var(--warn)'; }
-        }
-    }
-
-    function updateTimerUI() {
-        const ts = document.getElementById('timerSection'), st = document.getElementById('timerStatus'), dd = document.getElementById('timerDisplay');
-        const startBtn = document.getElementById('timerStartBtn'), pauseBtn = document.getElementById('timerPauseBtn'), resumeBtn = document.getElementById('timerResumeBtn');
-        const stopBtn = document.getElementById('timerStopBtn'), saveBtn = document.getElementById('saveSessionBtn'), completeBtn = document.getElementById('completeBtn');
-        const pi = document.getElementById('pausedSessionInfo'), comp = document.getElementById('timerComparison');
-        ts.classList.remove('running','paused'); dd.classList.remove('running','paused');
-        if (!timerState.isActive) {
-            st.textContent = 'Ready'; st.className = 'timer-status idle'; dd.textContent = '00:00:00';
-            startBtn.style.display = 'inline-flex'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'none';
-            stopBtn.disabled = true; saveBtn.disabled = true; completeBtn.disabled = true;
-            pi.style.display = 'none'; comp.style.display = 'none';
-            document.getElementById('timerPassageTitle').textContent = 'Select a reading to start';
-            document.getElementById('timerChapters').textContent = '--'; document.getElementById('timerDay').textContent = '--'; document.getElementById('timerEstimated').textContent = '--';
-        } else if (timerState.isRunning) {
-            ts.classList.add('running'); dd.classList.add('running'); st.textContent = 'Reading...'; st.className = 'timer-status running';
-            startBtn.style.display = 'none'; pauseBtn.style.display = 'inline-flex'; resumeBtn.style.display = 'none';
-            stopBtn.disabled = false; saveBtn.disabled = false; completeBtn.disabled = false; pi.style.display = 'none'; comp.style.display = 'grid';
-        } else {
-            ts.classList.add('paused'); dd.classList.add('paused'); st.textContent = 'Paused'; st.className = 'timer-status paused';
-            startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'inline-flex';
-            stopBtn.disabled = false; saveBtn.disabled = false; completeBtn.disabled = false;
-            pi.style.display = 'flex'; document.getElementById('pausedSessionTime').textContent = formatTime(timerState.accumulatedMs); comp.style.display = 'grid';
-        }
-        if (timerState.isActive) {
-            document.getElementById('timerPassageTitle').textContent = timerState.passage;
-            document.getElementById('timerChapters').textContent = timerState.chapters;
-            document.getElementById('timerDay').textContent = timerState.dayNum;
-            document.getElementById('timerEstimated').textContent = getEstimatedReadingTime(timerState.chapters);
-        }
-        updateFloatingTimerUI();
-    }
-
-    function updateFloatingTimerUI() {
-        const f = document.getElementById('floatingTimer'), s = document.getElementById('floatingTimerStatus'), d = document.getElementById('floatingTimerDisplay');
-        const pb = document.getElementById('floatingPauseBtn'), rb = document.getElementById('floatingResumeBtn');
-        f.classList.remove('paused'); d.classList.remove('running','paused');
-        if (timerState.isActive && timerState.isRunning) { s.textContent='Reading'; s.className='timer-status running'; d.classList.add('running'); pb.style.display='inline-flex'; rb.style.display='none'; }
-        else if (timerState.isActive) { f.classList.add('paused'); s.textContent='Paused'; s.className='timer-status paused'; d.classList.add('paused'); pb.style.display='none'; rb.style.display='inline-flex'; }
-        if (timerState.passage) document.getElementById('floatingTimerPassage').textContent = timerState.passage.length > 30 ? timerState.passage.substring(0,30)+'...' : timerState.passage;
-    }
-
-    function updateTimerIndicators() {
-        const ni = document.getElementById('navTimerIndicator'),
-              ab = document.getElementById('activeTimerAlert'),
-              tb = document.getElementById('timerActiveBadge');
-        const alertPause = document.getElementById('alertPauseBtn');
-        const alertResume = document.getElementById('alertResumeBtn');
-
-        if (timerState.isActive) {
-            ni.style.display = 'block';
-            ni.className = timerState.isRunning ? 'timer-indicator' : 'timer-indicator paused';
-
-            const ct = document.querySelector('.tab-panel.active')?.id;
-            if (ct !== 'timer') {
-                ab.style.display = 'flex';
-                ab.className = timerState.isRunning ? 'streak-banner success' : 'streak-banner fire';
-                document.getElementById('alertTimerIcon').textContent = timerState.isRunning ? '\u23F1' : '\u23F8';
-                document.getElementById('alertTimerTitle').textContent = timerState.isRunning ? 'Timer Running' : 'Timer Paused';
-                document.getElementById('alertTimerPassage').textContent = timerState.passage;
-
-                // Toggle pause/resume buttons in alert
-                if (timerState.isRunning) {
-                    if (alertPause) alertPause.style.display = '';
-                    if (alertResume) alertResume.style.display = 'none';
+        textArea.classList.remove('loading');
+        textArea.innerHTML = content || '<p style="color:var(--txt2)">No content available for this chapter.</p>';
+        
+        // --- NEW: Wrap verses into clickable spans for tap-to-select ---
+        const textBlocks = textArea.querySelectorAll('p, div, blockquote, q');
+        textBlocks.forEach(block => {
+            let currentVerseSpan = null;
+            const nodes = Array.from(block.childNodes);
+            block.innerHTML = ''; // Clear block contents to reconstruct
+            
+            nodes.forEach(node => {
+                // Check if node is a verse number span
+                if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('v')) {
+                    currentVerseSpan = document.createElement('span');
+                    currentVerseSpan.className = 'verse-span';
+                    currentVerseSpan.dataset.verseNum = node.textContent.trim();
+                    // Add click event for highlighting
+                    currentVerseSpan.onclick = function(e) {
+                        toggleVerseSelection(this, e);
+                    };
+                    currentVerseSpan.appendChild(node);
+                    block.appendChild(currentVerseSpan);
+                } else if (currentVerseSpan) {
+                    // Append subsequent nodes (text and punctuation) to the current verse wrapper
+                    currentVerseSpan.appendChild(node);
                 } else {
-                    if (alertPause) alertPause.style.display = 'none';
-                    if (alertResume) alertResume.style.display = '';
+                    // Nodes before the first verse in a block (e.g., headers or intro text)
+                    block.appendChild(node);
                 }
-            } else {
-                ab.style.display = 'none';
-            }
+            });
+        });
 
-            if (timerState.dayNum === getCurrentDay()) {
-                if (tb) {
-                    tb.style.display = 'inline';
-                    tb.className = timerState.isRunning ? 'badge badge-timer' : 'badge badge-paused';
-                    tb.textContent = timerState.isRunning ? 'Timer Active' : 'Timer Paused';
-                }
+        void textArea.offsetWidth; // force reflow for animation restart
+        textArea.classList.add('loaded');
+        setTimeout(() => textArea.classList.remove('loaded'), 600);
+        textArea.scrollTop = 0;
+
+        // Update YouVersion-style chapter heading
+        const heading = document.getElementById('readerChapterHeading');
+        if (heading) {
+            heading.style.display = 'block';
+            document.getElementById('readerBookName').textContent = bookName.toUpperCase();
+            document.getElementById('readerChapterNum').textContent = chapter;
+        }
+
+        // Show bottom nav with location
+        const bottomNav = document.getElementById('readerBottomNav');
+        if (bottomNav) {
+            bottomNav.style.display = 'flex';
+            document.getElementById('readerNavLocation').textContent = bookName + ' ' + chapter;
+        }
+
+        // Show copyright with source indicator
+        if (copyright) {
+            let copyrightText = data.copyright || '';
+            if (data.source === 'bible-api.com (free)') {
+                copyrightText += ' · Using free API (no key required)';
+            }
+            if (copyrightText) {
+                copyright.textContent = copyrightText;
+                copyright.style.display = 'block';
+            }
+        }
+
+    } catch (err) {
+        console.error('Bible load error:', err);
+        textArea.innerHTML = `<div class="bible-loading" style="flex-direction:column; gap:12px; text-align:center;">
+            <p style="color:var(--danger); font-family:var(--font-sans);">Failed to load Bible text.</p>
+            <p style="color:var(--txt3); font-family:var(--font-sans); font-size:0.8rem;">Check your internet connection.</p>
+            <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
+                <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('KJV'); loadBibleChapter()">Try KJV (free)</button>
+            </div>
+        </div>`;
+    }
+}
+
+// Keep loadBibleText as alias for backward compatibility
+function loadBibleText() { loadBibleChapter(); }
+
+function switchBibleVersion(version) {
+    currentBibleVersion = version;
+
+    // Update settings panel version buttons
+    document.querySelectorAll('.reader-version-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.version === version);
+    });
+    // Update version chip label
+    const chip = document.getElementById('versionChip');
+    if (chip) chip.textContent = version;
+
+    const bookName = document.getElementById('bibleBookSelect').value;
+    const chapter = document.getElementById('bibleChapterSelect').value;
+    if (bookName && chapter) loadBibleChapter();
+}
+
+function prevBibleChapter() {
+    const chSelect = document.getElementById('bibleChapterSelect');
+    const bookSelect = document.getElementById('bibleBookSelect');
+    let ch = parseInt(chSelect.value);
+
+    if (ch > 1) {
+        chSelect.value = ch - 1;
+        loadBibleChapter();
+    } else {
+        const bookName = bookSelect.value;
+        const idx = bibleBooks.findIndex(b => b.name === bookName);
+        if (idx > 0) {
+            const prevBook = bibleBooks[idx - 1];
+            bookSelect.value = prevBook.name;
+            onBibleBookChange();
+            chSelect.value = prevBook.chapters;
+            loadBibleChapter();
+        }
+    }
+}
+
+function nextBibleChapter() {
+    const chSelect = document.getElementById('bibleChapterSelect');
+    const bookSelect = document.getElementById('bibleBookSelect');
+    let ch = parseInt(chSelect.value);
+    const bookName = bookSelect.value;
+    const book = bibleBooks.find(b => b.name === bookName);
+    if (!book) return;
+
+    if (ch < book.chapters) {
+        chSelect.value = ch + 1;
+        loadBibleChapter();
+    } else {
+        const idx = bibleBooks.findIndex(b => b.name === bookName);
+        if (idx < bibleBooks.length - 1) {
+            const nextBook = bibleBooks[idx + 1];
+            bookSelect.value = nextBook.name;
+            onBibleBookChange();
+        }
+    }
+}
+
+function adjustReaderFontSize(delta) {
+    readerFontSize = Math.max(0.8, Math.min(2.2, readerFontSize + (delta * 0.1)));
+    const textArea = document.getElementById('bibleTextArea');
+    if (textArea) textArea.style.fontSize = readerFontSize + 'rem';
+    const display = document.getElementById('readerFontSizeDisplay');
+    if (display) display.textContent = Math.round(readerFontSize * 100) + '%';
+}
+
+function setReaderFont(fontFamily) {
+    const textArea = document.getElementById('bibleTextArea');
+    if (textArea) textArea.style.fontFamily = fontFamily;
+}
+
+function toggleReaderSettings() {
+    const panel = document.getElementById('readerSettingsPanel');
+    const btn = document.getElementById('readerSettingsBtn');
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    btn.classList.toggle('active', isHidden);
+}
+
+function selectReaderFont(btn) {
+    document.querySelectorAll('.reader-font-option').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setReaderFont(btn.dataset.font);
+}
+
+// ===== CHAT RESET =====
+function clearChat() {
+    chatHistory = [];
+    const msgs = document.getElementById('chatMessages');
+    if (msgs) msgs.innerHTML = '<div class="chat-msg ai">Chat cleared. How can I help you with your Bible study?</div>';
+}
+
+// ===== TAP-TO-HIGHLIGHT AND ASK AI (Feature 3 Revised) =====
+let selectedVersesSet = new Set();
+
+function clearVerseSelection() {
+    selectedVersesSet.clear();
+    document.querySelectorAll('.verse-span.selected').forEach(el => el.classList.remove('selected'));
+    document.getElementById('askAiTooltip').classList.remove('show');
+}
+
+function toggleVerseSelection(verseElement, event) {
+    event.stopPropagation();
+    
+    // Remove native selection if any to prevent conflict
+    window.getSelection().removeAllRanges();
+
+    const verseNum = verseElement.dataset.verseNum;
+    if (selectedVersesSet.has(verseElement)) {
+        selectedVersesSet.delete(verseElement);
+        verseElement.classList.remove('selected');
+    } else {
+        selectedVersesSet.add(verseElement);
+        verseElement.classList.add('selected');
+    }
+
+    updateAskAiTooltip();
+}
+
+function updateAskAiTooltip() {
+    const tooltip = document.getElementById('askAiTooltip');
+    
+    if (selectedVersesSet.size === 0) {
+        tooltip.classList.remove('show');
+        selectedHighlightText = '';
+        return;
+    }
+
+    // Gather text from selected verses, sorted by verse number logically
+    const sortedVerses = Array.from(selectedVersesSet).sort((a, b) => {
+        return parseInt(a.dataset.verseNum) - parseInt(b.dataset.verseNum);
+    });
+
+    // Extract raw text content without the verse number span text
+    let combinedText = '';
+    sortedVerses.forEach(verseEl => {
+        // Clone node to manipulate and remove the verse number child
+        const clone = verseEl.cloneNode(true);
+        const vSpan = clone.querySelector('.v');
+        if (vSpan) vSpan.remove();
+        combinedText += clone.textContent.trim() + ' ';
+    });
+    selectedHighlightText = combinedText.trim();
+
+    // Position tooltip near the most recently selected verse, or the center of the viewport
+    const lastSelected = sortedVerses[sortedVerses.length - 1];
+    const rect = lastSelected.getBoundingClientRect();
+
+    const left = Math.min(rect.left + rect.width / 2 - 50, window.innerWidth - 130);
+    const top = Math.max(10, rect.top - 45);
+
+    tooltip.style.left = Math.max(10, left) + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.classList.add('show');
+    
+    // Change tooltip text to reflect count if multiple
+    if (selectedVersesSet.size > 1) {
+        tooltip.innerHTML = `Ask AI about ${selectedVersesSet.size} verses 💬`;
+    } else {
+        tooltip.innerHTML = `Ask AI 💬`;
+    }
+}
+
+// Keep native text selection as a fallback just in case they select across paragraphs
+function initHighlightToAsk() {
+    // Deselect when tapping outside
+    document.addEventListener('mousedown', (e) => {
+        const tooltip = document.getElementById('askAiTooltip');
+        if (!tooltip.contains(e.target) && !e.target.closest('.verse-span')) {
+            clearVerseSelection();
+        }
+    });
+    document.addEventListener('touchstart', (e) => {
+        const tooltip = document.getElementById('askAiTooltip');
+        if (!tooltip.contains(e.target) && !e.target.closest('.verse-span')) {
+            // Delay slightly to allow tap logic to run if tapping on a verse
+            setTimeout(() => {
+                if (!e.target.closest('.verse-span')) clearVerseSelection();
+            }, 50);
+        }
+    }, { passive: true });
+}
+
+function askAIAboutSelection() {
+    const tooltip = document.getElementById('askAiTooltip');
+    tooltip.classList.remove('show');
+
+    if (selectedHighlightText) {
+        // Get book and chapter info to provide context
+        const bookName = document.getElementById('bibleBookSelect').value;
+        const chapter = document.getElementById('bibleChapterSelect').value;
+        
+        // Build a helpful reference prefix
+        let reference = '';
+        if (bookName && chapter && selectedVersesSet.size > 0) {
+            const nums = Array.from(selectedVersesSet).map(v => parseInt(v.dataset.verseNum)).sort((a,b)=>a-b);
+            const isContiguous = nums.every((num, i) => i === 0 || num === nums[i - 1] + 1);
+            
+            if (nums.length === 1) {
+                reference = `(${bookName} ${chapter}:${nums[0]})`;
+            } else if (isContiguous) {
+                reference = `(${bookName} ${chapter}:${nums[0]}-${nums[nums.length-1]})`;
             } else {
-                if (tb) tb.style.display = 'none';
+                reference = `(${bookName} ${chapter})`;
+            }
+        }
+
+        const chatInput = document.getElementById('chatInput');
+        chatInput.value = `Explain this passage ${reference}: "${selectedHighlightText}"`;
+        switchTab('chat-tab');
+        clearVerseSelection();
+        setTimeout(() => chatInput.focus(), 300);
+    }
+}
+
+// ===== VOICE-TO-TEXT (Feature 6) =====
+async function toggleRecording(btn, targetId) {
+    const targetInput = document.getElementById(targetId);
+
+    if (isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        btn.textContent = '⏳';
+        btn.style.animation = 'spin 1s linear infinite';
+        return;
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioMimeType = mediaRecorder.mimeType;
+            const audioBlob = new Blob(audioChunks, { type: audioMimeType });
+
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Audio = reader.result.split(',')[1];
+
+                try {
+                    const response = await fetch('/api/transcribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: base64Audio, mimeType: audioMimeType })
+                    });
+
+                    if (!response.ok) throw new Error('Transcription failed');
+                    const data = await response.json();
+
+                    const currentText = targetInput.value;
+                    const spacer = (currentText === '') ? '' : ' ';
+                    targetInput.value = currentText + spacer + data.text;
+                } catch (error) {
+                    console.error('Transcription API Error:', error);
+                    alert('Failed to transcribe audio.');
+                } finally {
+                    btn.textContent = '🎙️';
+                    btn.style.animation = '';
+                    btn.style.color = '';
+                    btn.style.backgroundColor = 'transparent';
+                }
+            };
+
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        btn.textContent = '⏹️';
+        btn.style.color = 'white';
+        btn.style.backgroundColor = 'var(--danger)';
+        btn.style.borderRadius = '50%';
+
+    } catch (err) {
+        console.error("Microphone access denied:", err);
+        alert('Microphone access is required to use dictation.');
+    }
+}
+
+// ===== AI FEATURES =====
+function toggleContext() { document.getElementById('todayContext').classList.toggle('show'); }
+function formatAIResponse(text) { return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
+
+async function fetchAIContext() {
+    const today = getCurrentDay(); const plan = state.readingPlan[today - 1];
+    if (!plan) return;
+    const contextBox = document.getElementById('todayContext');
+    contextBox.innerHTML = '<span class="loading-dots">Thinking</span>'; contextBox.classList.add('show');
+    try {
+        const response = await fetch('/api/context', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passage: plan.reading }) });
+        const data = await response.json(); if (data.error) throw new Error(data.error);
+        plan.aiContext = data.context; saveState(); contextBox.innerHTML = formatAIResponse(plan.aiContext);
+    } catch (err) { console.error(err); contextBox.innerHTML = `<p style="color: var(--danger)">Unable to connect to AI Server.</p><button class="btn btn-small btn-secondary" style="margin-top:10px" onclick="fetchAIContext()">Try Again</button>`; }
+}
+
+function handleChatKeyPress(e) { if(e.key === 'Enter') sendChatMessage(); }
+
+function appendChatMessage(text, sender, isTemp = false) {
+    const c = document.getElementById('chatMessages'); const m = document.createElement('div');
+    m.className = `chat-msg ${sender}`; if(isTemp) m.id = 'tempLoadingMsg';
+    m.innerHTML = formatAIResponse(text); c.appendChild(m); c.scrollTop = c.scrollHeight; return m.id;
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput'); const msg = input.value.trim(); if(!msg) return;
+    appendChatMessage(msg, 'user'); input.value = '';
+    appendChatMessage('<span class="loading-dots">Thinking</span>', 'ai', true);
+    const today = getCurrentDay(); const currentPassage = state.readingPlan[today - 1]?.reading || '';
+    try {
+        const response = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: msg, history: chatHistory, currentPassage }) });
+        const data = await response.json(); document.getElementById('tempLoadingMsg')?.remove();
+        if (data.error) throw new Error(data.error); appendChatMessage(data.reply, 'ai');
+        chatHistory.push({ role: "user", parts: [{ text: msg }] });
+        chatHistory.push({ role: "model", parts: [{ text: data.reply }] });
+    } catch (err) { console.error(err); document.getElementById('tempLoadingMsg')?.remove(); appendChatMessage('Server connection failed.', 'error'); }
+}
+
+// ===== PLAN GENERATION =====
+function generateReadingPlan(planType, totalDays) {
+    const plan = []; let books = [...bibleBooks];
+    if (planType === 'nt30') books = bibleBooks.filter(b => b.testament === 'NT');
+    const totalChapters = books.reduce((sum, b) => sum + b.chapters, 0);
+    const chaptersPerDay = Math.ceil(totalChapters / totalDays);
+    let currentBook = 0, currentChapter = 1;
+    for (let day = 1; day <= totalDays; day++) {
+        let dayReadings = [], chaptersToday = 0, targetChapters = chaptersPerDay;
+        while (chaptersToday < targetChapters && currentBook < books.length) {
+            const book = books[currentBook], startChapter = currentChapter;
+            const remainingInBook = book.chapters - currentChapter + 1, chaptersNeeded = targetChapters - chaptersToday;
+            if (remainingInBook <= chaptersNeeded) { dayReadings.push({ book: book.name, start: startChapter, end: book.chapters, count: remainingInBook }); chaptersToday += remainingInBook; currentBook++; currentChapter = 1; }
+            else { const endChapter = currentChapter + chaptersNeeded - 1; dayReadings.push({ book: book.name, start: startChapter, end: endChapter, count: chaptersNeeded }); chaptersToday += chaptersNeeded; currentChapter = endChapter + 1; }
+        }
+        let readingStr = dayReadings.map(r => r.start === r.end ? `${r.book} ${r.start}` : `${r.book} ${r.start}-${r.end}`).join(", ");
+        const totalDayChapters = dayReadings.reduce((sum, r) => sum + r.count, 0);
+        plan.push({ day, reading: readingStr, chapters: totalDayChapters, books: dayReadings.map(r => r.book), completed: false, completedAt: null, totalReadingTimeMs: 0 });
+    }
+    return plan;
+}
+function getPlanDays(planType) { return { 'oneyear': 365, '90day': 90, 'nt30': 30 }[planType] || 365; }
+
+// ===== TIMER FUNCTIONS =====
+function restoreTimerIfActive() { if (timerState.isActive) { updateTimerUI(); updateTimerIndicators(); if (timerState.isRunning) showFloatingTimer(); } }
+function startTimerForToday() { startTimerForDay(getCurrentDay()); }
+function startTimerForSelectedDay() { const dayNum = parseInt(document.getElementById('daySelector').value); if (dayNum) startTimerForDay(dayNum); }
+
+function startTimerForDay(dayNum) {
+    const plan = state.readingPlan[dayNum - 1]; if (!plan) return;
+    if (timerState.isActive && timerState.dayNum !== dayNum) { if (!confirm(`You have an active timer for Day ${timerState.dayNum}. Discard and start new?`)) return; }
+    timerState.isActive = true; timerState.isRunning = false; timerState.dayNum = dayNum; timerState.passage = plan.reading; timerState.chapters = plan.chapters;
+    timerState.startedAt = null; timerState.pausedAt = null; timerState.accumulatedMs = plan.totalReadingTimeMs || 0;
+    saveTimerState(); updateTimerUI(); switchTab('timer');
+}
+
+function startTimer() {
+    if (!timerState.isActive) startTimerForToday();
+    timerState.isRunning = true; timerState.startedAt = Date.now(); timerState.pausedAt = null;
+    saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
+    if (state.settings.showFloatingTimer) showFloatingTimer();
+}
+function pauseTimer() {
+    if (!timerState.isRunning) return;
+    timerState.accumulatedMs += Date.now() - timerState.startedAt;
+    timerState.isRunning = false; timerState.pausedAt = Date.now(); timerState.startedAt = null;
+    saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
+}
+function resumeTimer() {
+    if (timerState.isRunning) return;
+    timerState.isRunning = true; timerState.startedAt = Date.now(); timerState.pausedAt = null;
+    saveTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar();
+    if (state.settings.showFloatingTimer) showFloatingTimer();
+}
+function pauseTimerFromFloat() {
+    pauseTimer();
+    updateFloatingTimerUI();
+    const alertPause = document.getElementById('alertPauseBtn');
+    const alertResume = document.getElementById('alertResumeBtn');
+    if (alertPause) alertPause.style.display = 'none';
+    if (alertResume) alertResume.style.display = '';
+}
+function resumeTimerFromFloat() {
+    resumeTimer();
+    updateFloatingTimerUI();
+    const alertPause = document.getElementById('alertPauseBtn');
+    const alertResume = document.getElementById('alertResumeBtn');
+    if (alertPause) alertPause.style.display = '';
+    if (alertResume) alertResume.style.display = 'none';
+}
+function stopAndSaveTimer() {
+    if (!timerState.isActive) return;
+    if (timerState.isRunning) timerState.accumulatedMs += Date.now() - timerState.startedAt;
+    const totalMs = timerState.accumulatedMs, dayNum = timerState.dayNum, plan = state.readingPlan[dayNum - 1];
+    if (plan) plan.totalReadingTimeMs = totalMs;
+    saveState(); clearTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar(); hideFloatingTimer(); renderAll();
+}
+function discardTimer() { if (!timerState.isActive) return; if (confirm('Discard this timer session?')) { clearTimerState(); updateTimerUI(); updateTimerIndicators(); updateReaderSessionBar(); hideFloatingTimer(); } }
+
+function completeReading() {
+    if (!timerState.isActive) return;
+    if (timerState.isRunning) timerState.accumulatedMs += Date.now() - timerState.startedAt;
+    const totalMs = timerState.accumulatedMs, dayNum = timerState.dayNum, plan = state.readingPlan[dayNum - 1];
+    const session = { id: Date.now(), dayNum, passage: timerState.passage, chapters: timerState.chapters, durationMs: totalMs, date: new Date().toISOString() };
+    state.sessions.push(session);
+    if (plan) { plan.totalReadingTimeMs = totalMs; plan.completed = true; plan.completedAt = new Date().toISOString(); }
+    state.stats.timerSessions++;
+    const estimatedMs = getEstimatedReadingTime(timerState.chapters) * 60000;
+    if (totalMs < estimatedMs) state.stats.fasterSessions++;
+    saveState(); showTimerCompleteModal(session, estimatedMs);
+    clearTimerState(); updateTimerUI(); updateTimerIndicators(); hideFloatingTimer(); renderAll();
+}
+
+function getCurrentTimerMs() { if (!timerState.isActive) return 0; let total = timerState.accumulatedMs; if (timerState.isRunning && timerState.startedAt) total += Date.now() - timerState.startedAt; return total; }
+function formatTime(ms) { const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
+function formatDuration(ms) { const m = Math.floor(ms/60000), h = Math.floor(m/60), mins = m%60; return h > 0 ? `${h}h ${mins}m` : `${mins}m`; }
+
+function updateAllTimerDisplays() {
+    if (!timerState.isActive) return;
+    const currentMs = getCurrentTimerMs(), timeStr = formatTime(currentMs);
+    const md = document.getElementById('timerDisplay'); if (md) md.textContent = timeStr;
+    const fd = document.getElementById('floatingTimerDisplay'); if (fd) fd.textContent = timeStr;
+    const ad = document.getElementById('alertTimerDisplay'); if (ad) ad.textContent = timeStr;
+    const sd = document.getElementById('sessionTimerDisplay'); if (sd) sd.textContent = formatTimeShort(currentMs);
+    if (timerState.chapters) {
+        const est = getEstimatedReadingTime(timerState.chapters) * 60000, diff = currentMs - est;
+        document.getElementById('comparisonEstimated').textContent = formatDuration(est);
+        document.getElementById('comparisonActual').textContent = formatDuration(currentMs);
+        const d = document.getElementById('comparisonDiff');
+        if (diff < 0) { d.textContent = `${Math.abs(Math.floor(diff/60000))}m ahead`; d.className = 'value faster'; d.style.color = 'var(--success)'; }
+        else { d.textContent = `${Math.floor(diff/60000)}m over`; d.className = 'value slower'; d.style.color = 'var(--warn)'; }
+    }
+}
+
+function updateTimerUI() {
+    const ts = document.getElementById('timerSection'), st = document.getElementById('timerStatus'), dd = document.getElementById('timerDisplay');
+    const startBtn = document.getElementById('timerStartBtn'), pauseBtn = document.getElementById('timerPauseBtn'), resumeBtn = document.getElementById('timerResumeBtn');
+    const stopBtn = document.getElementById('timerStopBtn'), saveBtn = document.getElementById('saveSessionBtn'), completeBtn = document.getElementById('completeBtn');
+    const pi = document.getElementById('pausedSessionInfo'), comp = document.getElementById('timerComparison');
+    ts.classList.remove('running','paused'); dd.classList.remove('running','paused');
+    if (!timerState.isActive) {
+        st.textContent = 'Ready'; st.className = 'timer-status idle'; dd.textContent = '00:00:00';
+        startBtn.style.display = 'inline-flex'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'none';
+        stopBtn.disabled = true; saveBtn.disabled = true; completeBtn.disabled = true;
+        pi.style.display = 'none'; comp.style.display = 'none';
+        document.getElementById('timerPassageTitle').textContent = 'Select a reading to start';
+        document.getElementById('timerChapters').textContent = '--'; document.getElementById('timerDay').textContent = '--'; document.getElementById('timerEstimated').textContent = '--';
+    } else if (timerState.isRunning) {
+        ts.classList.add('running'); dd.classList.add('running'); st.textContent = 'Reading...'; st.className = 'timer-status running';
+        startBtn.style.display = 'none'; pauseBtn.style.display = 'inline-flex'; resumeBtn.style.display = 'none';
+        stopBtn.disabled = false; saveBtn.disabled = false; completeBtn.disabled = false; pi.style.display = 'none'; comp.style.display = 'grid';
+    } else {
+        ts.classList.add('paused'); dd.classList.add('paused'); st.textContent = 'Paused'; st.className = 'timer-status paused';
+        startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'inline-flex';
+        stopBtn.disabled = false; saveBtn.disabled = false; completeBtn.disabled = false;
+        pi.style.display = 'flex'; document.getElementById('pausedSessionTime').textContent = formatTime(timerState.accumulatedMs); comp.style.display = 'grid';
+    }
+    if (timerState.isActive) {
+        document.getElementById('timerPassageTitle').textContent = timerState.passage;
+        document.getElementById('timerChapters').textContent = timerState.chapters;
+        document.getElementById('timerDay').textContent = timerState.dayNum;
+        document.getElementById('timerEstimated').textContent = getEstimatedReadingTime(timerState.chapters);
+    }
+    updateFloatingTimerUI();
+}
+
+function updateFloatingTimerUI() {
+    const f = document.getElementById('floatingTimer'), s = document.getElementById('floatingTimerStatus'), d = document.getElementById('floatingTimerDisplay');
+    const pb = document.getElementById('floatingPauseBtn'), rb = document.getElementById('floatingResumeBtn');
+    f.classList.remove('paused'); d.classList.remove('running','paused');
+    if (timerState.isActive && timerState.isRunning) { s.textContent='Reading'; s.className='timer-status running'; d.classList.add('running'); pb.style.display='inline-flex'; rb.style.display='none'; }
+    else if (timerState.isActive) { f.classList.add('paused'); s.textContent='Paused'; s.className='timer-status paused'; d.classList.add('paused'); pb.style.display='none'; rb.style.display='inline-flex'; }
+    if (timerState.passage) document.getElementById('floatingTimerPassage').textContent = timerState.passage.length > 30 ? timerState.passage.substring(0,30)+'...' : timerState.passage;
+}
+
+function updateTimerIndicators() {
+    const ni = document.getElementById('navTimerIndicator'),
+          ab = document.getElementById('activeTimerAlert'),
+          tb = document.getElementById('timerActiveBadge');
+    const alertPause = document.getElementById('alertPauseBtn');
+    const alertResume = document.getElementById('alertResumeBtn');
+
+    if (timerState.isActive) {
+        ni.style.display = 'block';
+        ni.className = timerState.isRunning ? 'timer-indicator' : 'timer-indicator paused';
+
+        const ct = document.querySelector('.tab-panel.active')?.id;
+        if (ct !== 'timer') {
+            ab.style.display = 'flex';
+            ab.className = timerState.isRunning ? 'streak-banner success' : 'streak-banner fire';
+            document.getElementById('alertTimerIcon').textContent = timerState.isRunning ? '\u23F1' : '\u23F8';
+            document.getElementById('alertTimerTitle').textContent = timerState.isRunning ? 'Timer Running' : 'Timer Paused';
+            document.getElementById('alertTimerPassage').textContent = timerState.passage;
+
+            // Toggle pause/resume buttons in alert
+            if (timerState.isRunning) {
+                if (alertPause) alertPause.style.display = '';
+                if (alertResume) alertResume.style.display = 'none';
+            } else {
+                if (alertPause) alertPause.style.display = 'none';
+                if (alertResume) alertResume.style.display = '';
             }
         } else {
-            if (ni) ni.style.display = 'none';
-            if (ab) ab.style.display = 'none';
+            ab.style.display = 'none';
+        }
+
+        if (timerState.dayNum === getCurrentDay()) {
+            if (tb) {
+                tb.style.display = 'inline';
+                tb.className = timerState.isRunning ? 'badge badge-timer' : 'badge badge-paused';
+                tb.textContent = timerState.isRunning ? 'Timer Paused' : 'Timer Paused';
+                if(timerState.isRunning) tb.textContent = 'Timer Active';
+            }
+        } else {
             if (tb) tb.style.display = 'none';
         }
-        updateReaderSessionBar();
+    } else {
+        if (ni) ni.style.display = 'none';
+        if (ab) ab.style.display = 'none';
+        if (tb) tb.style.display = 'none';
     }
+    updateReaderSessionBar();
+}
 
-    function showFloatingTimer() { if (timerState.isActive && state.settings.showFloatingTimer) document.getElementById('floatingTimer').classList.add('show'); }
-    function hideFloatingTimer() { document.getElementById('floatingTimer').classList.remove('show'); }
+function showFloatingTimer() { if (timerState.isActive && state.settings.showFloatingTimer) document.getElementById('floatingTimer').classList.add('show'); }
+function hideFloatingTimer() { document.getElementById('floatingTimer').classList.remove('show'); }
 
-    function showTimerCompleteModal(session, estimatedMs) {
-        const actualMs = session.durationMs;
-        document.getElementById('tcmPassage').textContent = session.passage;
-        document.getElementById('tcmActual').textContent = formatDuration(actualMs);
-        document.getElementById('tcmEstimated').textContent = formatDuration(estimatedMs);
-        const diffMs = actualMs - estimatedMs, sEl = document.getElementById('tcmActual'), mEl = document.getElementById('tcmMessage');
-        if (diffMs < 0) { sEl.style.color='var(--success)'; mEl.textContent='Great job! Ahead of schedule.'; }
-        else if (diffMs > 5*60000) { sEl.style.color='var(--warn)'; mEl.textContent='Take your time, deep reading counts!'; }
-        else { sEl.style.color='var(--pri)'; mEl.textContent='Right on target.'; }
-        window.lastCompletedSession = session; openModal('timerCompleteModal');
+function showTimerCompleteModal(session, estimatedMs) {
+    const actualMs = session.durationMs;
+    document.getElementById('tcmPassage').textContent = session.passage;
+    document.getElementById('tcmActual').textContent = formatDuration(actualMs);
+    document.getElementById('tcmEstimated').textContent = formatDuration(estimatedMs);
+    const diffMs = actualMs - estimatedMs, sEl = document.getElementById('tcmActual'), mEl = document.getElementById('tcmMessage');
+    if (diffMs < 0) { sEl.style.color='var(--success)'; mEl.textContent='Great job! Ahead of schedule.'; }
+    else if (diffMs > 5*60000) { sEl.style.color='var(--warn)'; mEl.textContent='Take your time, deep reading counts!'; }
+    else { sEl.style.color='var(--pri)'; mEl.textContent='Right on target.'; }
+    window.lastCompletedSession = session; openModal('timerCompleteModal');
+}
+
+function markCompletedFromModal() {
+    if (window.lastCompletedSession) {
+        const dayNum = window.lastCompletedSession.dayNum, plan = state.readingPlan[dayNum-1];
+        if (plan && !plan.completed) { plan.completed = true; plan.completedAt = new Date().toISOString(); saveState(); renderAll(); }
     }
+    closeModal('timerCompleteModal'); showCelebration();
+}
 
-    function markCompletedFromModal() {
-        if (window.lastCompletedSession) {
-            const dayNum = window.lastCompletedSession.dayNum, plan = state.readingPlan[dayNum-1];
-            if (plan && !plan.completed) { plan.completed = true; plan.completedAt = new Date().toISOString(); saveState(); renderAll(); }
-        }
-        closeModal('timerCompleteModal'); showCelebration();
-    }
+// ===== CORE FUNCTIONS =====
+function getCurrentDay() { if (!state.startDate) return 1; const t = new Date(); t.setHours(0,0,0,0); const s = new Date(state.startDate); s.setHours(0,0,0,0); return Math.max(1, Math.min(state.readingPlan.length, Math.floor((t-s)/(1000*60*60*24))+1)); }
 
-    // ===== CORE FUNCTIONS =====
-    function getCurrentDay() { if (!state.startDate) return 1; const t = new Date(); t.setHours(0,0,0,0); const s = new Date(state.startDate); s.setHours(0,0,0,0); return Math.max(1, Math.min(state.readingPlan.length, Math.floor((t-s)/(1000*60*60*24))+1)); }
+function calculateStreaks() {
+    const today = getCurrentDay(); let currentStreak = 0, longestStreak = 0, tempStreak = 0;
+    for (let i = 0; i < state.readingPlan.length; i++) { if (state.readingPlan[i].completed) { tempStreak++; longestStreak = Math.max(longestStreak, tempStreak); } else tempStreak = 0; }
+    for (let i = today - 1; i >= 0; i--) { if (state.readingPlan[i]?.completed) currentStreak++; else break; }
+    return { currentStreak, longestStreak };
+}
 
-    function calculateStreaks() {
-        const today = getCurrentDay(); let currentStreak = 0, longestStreak = 0, tempStreak = 0;
-        for (let i = 0; i < state.readingPlan.length; i++) { if (state.readingPlan[i].completed) { tempStreak++; longestStreak = Math.max(longestStreak, tempStreak); } else tempStreak = 0; }
-        for (let i = today - 1; i >= 0; i--) { if (state.readingPlan[i]?.completed) currentStreak++; else break; }
-        return { currentStreak, longestStreak };
-    }
+function calculateProgress() {
+    const completed = state.readingPlan.filter(d => d.completed).length, total = state.readingPlan.length;
+    const chaptersRead = state.readingPlan.filter(d => d.completed).reduce((sum, d) => sum + d.chapters, 0);
+    return { daysCompleted: completed, daysRemaining: total - completed, percentage: total > 0 ? Math.round((completed/total)*100) : 0, chaptersRead };
+}
 
-    function calculateProgress() {
-        const completed = state.readingPlan.filter(d => d.completed).length, total = state.readingPlan.length;
-        const chaptersRead = state.readingPlan.filter(d => d.completed).reduce((sum, d) => sum + d.chapters, 0);
-        return { daysCompleted: completed, daysRemaining: total - completed, percentage: total > 0 ? Math.round((completed/total)*100) : 0, chaptersRead };
-    }
+function getMissedDays() { const today = getCurrentDay(); let missed = []; for (let i = 0; i < today - 1; i++) { if (!state.readingPlan[i].completed) missed.push(i+1); } return missed; }
 
-    function getMissedDays() { const today = getCurrentDay(); let missed = []; for (let i = 0; i < today - 1; i++) { if (!state.readingPlan[i].completed) missed.push(i+1); } return missed; }
+function getCompletedBooks() {
+    let bp = {}; bibleBooks.forEach(b => { bp[b.name] = { total: b.chapters, completed: 0 }; });
+    state.readingPlan.forEach(day => { if (day.completed) { day.books?.forEach(bn => { if (bp[bn]) bp[bn].completed += day.chapters / day.books.length; }); } });
+    let completed = []; Object.keys(bp).forEach(b => { if (bp[b].completed >= bp[b].total * 0.9) completed.push(b); });
+    return { completed, progress: bp };
+}
 
-    function getCompletedBooks() {
-        let bp = {}; bibleBooks.forEach(b => { bp[b.name] = { total: b.chapters, completed: 0 }; });
-        state.readingPlan.forEach(day => { if (day.completed) { day.books?.forEach(bn => { if (bp[bn]) bp[bn].completed += day.chapters / day.books.length; }); } });
-        let completed = []; Object.keys(bp).forEach(b => { if (bp[b].completed >= bp[b].total * 0.9) completed.push(b); });
-        return { completed, progress: bp };
-    }
+function getEstimatedReadingTime(chapters) { const speeds = { slow: 4, normal: 3, fast: 2, study: 6 }; return chapters * (speeds[state.settings.readingSpeed] || 3); }
+function getActualAverageSpeed() { const s = state.sessions.filter(s => s.durationMs > 0); if (!s.length) return null; const ms = s.reduce((a,b) => a+b.durationMs, 0), ch = s.reduce((a,b) => a+b.chapters, 0); return ch > 0 ? ms/60000/ch : null; }
 
-    function getEstimatedReadingTime(chapters) { const speeds = { slow: 4, normal: 3, fast: 2, study: 6 }; return chapters * (speeds[state.settings.readingSpeed] || 3); }
-    function getActualAverageSpeed() { const s = state.sessions.filter(s => s.durationMs > 0); if (!s.length) return null; const ms = s.reduce((a,b) => a+b.durationMs, 0), ch = s.reduce((a,b) => a+b.chapters, 0); return ch > 0 ? ms/60000/ch : null; }
+// ===== RENDERING =====
+function renderAll() { renderDashboard(); renderReadings(); renderBibleMap(); renderAchievements(); renderWeeklyReview(); renderTimerHistory(); renderSpeedAnalysis(); updateDaySelector(); checkForMissedDays(); updateTimerIndicators(); }
 
-    // ===== RENDERING =====
-    function renderAll() { renderDashboard(); renderReadings(); renderBibleMap(); renderAchievements(); renderWeeklyReview(); renderTimerHistory(); renderSpeedAnalysis(); updateDaySelector(); checkForMissedDays(); updateTimerIndicators(); }
-
-    function renderDashboard() {
-        const today = getCurrentDay(), todayPlan = state.readingPlan[today-1];
-        const { currentStreak, longestStreak } = calculateStreaks(), progress = calculateProgress(), { completed: completedBooks } = getCompletedBooks();
-        document.getElementById('currentStreak').textContent = currentStreak;
-        document.getElementById('longestStreak').textContent = longestStreak;
-        document.getElementById('daysCompleted').textContent = progress.daysCompleted;
-        document.getElementById('booksCompleted').textContent = completedBooks.length;
-        document.getElementById('progressPercent').textContent = progress.percentage + '%';
-        document.getElementById('progressFill').style.width = progress.percentage + '%';
-        document.getElementById('chaptersRead').textContent = progress.chaptersRead + ' chapters';
-        const avgSpeed = getActualAverageSpeed();
-        document.getElementById('avgReadingSpeed').textContent = avgSpeed ? `Avg: ${avgSpeed.toFixed(1)} min/ch` : 'Avg: -- min/ch';
-        if (todayPlan) {
-            document.getElementById('todayDayNum').textContent = today;
-            document.getElementById('todayReading').textContent = todayPlan.reading;
-            const readingTime = getEstimatedReadingTime(todayPlan.chapters);
-            let timeDisplay = `~${readingTime} min`;
-            if (todayPlan.totalReadingTimeMs > 0) timeDisplay = formatDuration(todayPlan.totalReadingTimeMs) + ' tracked';
-            document.getElementById('readingTimeBadge').textContent = timeDisplay;
-            const todayBtn = document.getElementById('todayBtn'), startBtn = document.getElementById('startTimerBtn');
-            const readNowBtn = document.getElementById('readNowBtn');
-            if (todayPlan.completed) {
-                todayBtn.innerHTML = '\u2713 Completed'; todayBtn.className = 'btn btn-success';
-                startBtn.style.display = 'none';
-                if (readNowBtn) { readNowBtn.textContent = '\uD83D\uDCD6 Re-read'; readNowBtn.className = 'btn btn-secondary'; }
-            } else {
-                todayBtn.innerHTML = '\u2713 Mark Complete'; todayBtn.className = 'btn btn-secondary';
-                startBtn.style.display = ''; startBtn.textContent = timerState.isActive && timerState.dayNum === today ? '\u23F1 View Timer' : '\u23F1 Timer';
-                if (readNowBtn) { readNowBtn.textContent = '\uD83D\uDCD6 Read Now'; readNowBtn.className = 'btn btn-primary'; }
-            }
-            const contextBox = document.getElementById('todayContext');
-            if (todayPlan.aiContext) contextBox.innerHTML = formatAIResponse(todayPlan.aiContext);
-        }
-        renderHeatmap();
-    }
-
-    function renderHeatmap() {
-        const heatmap = document.getElementById('heatmap'); heatmap.innerHTML = ''; const today = getCurrentDay();
-        for (let i = 1; i <= Math.min(365, state.readingPlan.length); i++) {
-            const day = document.createElement('div'); day.className = 'heatmap-cell';
-            if (state.readingPlan[i-1]?.completed) day.classList.add('completed'); else if (i > today) day.classList.add('future');
-            if (i === today) day.classList.add('today'); day.title = `Day ${i}`;
-            day.onclick = () => { if (i <= today) toggleDay(i); }; heatmap.appendChild(day);
-        }
-    }
-
-    function renderReadings() {
-        const list = document.getElementById('readingList'); if(!list) return; list.innerHTML = '';
-        const today = getCurrentDay(), filter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all', search = document.getElementById('searchBox').value.toLowerCase();
-        let daysToShow = state.readingPlan.filter((day, idx) => {
-            const dayNum = idx + 1; if (search && !day.reading.toLowerCase().includes(search)) return false;
-            switch (filter) { case 'completed': return day.completed; case 'pending': return !day.completed; case 'week': return dayNum >= today && dayNum < today + 7; default: return true; }
-        });
-        daysToShow.forEach(day => {
-            const isToday = day.day === today, isMissed = day.day < today && !day.completed, hasTimer = timerState.isActive && timerState.dayNum === day.day;
-            const item = document.createElement('div');
-            item.className = `reading-item${day.completed?' completed':''}${isToday?' today':''}${isMissed?' missed':''}${hasTimer?' has-timer':''}`;
-            const estTime = getEstimatedReadingTime(day.chapters), actualTime = day.totalReadingTimeMs > 0 ? formatDuration(day.totalReadingTimeMs) : null;
-            item.innerHTML = `<div class="day-number">${day.day}</div><div class="reading-info"><div class="reading-passage">${day.reading} ${isToday?'<span class="badge badge-today" style="font-size:0.6rem;">TODAY</span>':''} ${hasTimer?'<span class="badge badge-timer" style="font-size:0.6rem;">TIMER</span>':''}</div><div class="reading-meta"><span>📖 ${day.chapters} ch</span><span>⏱️ ~${estTime}m</span>${actualTime?`<span class="actual-time">✓ ${actualTime}</span>`:''}</div></div><div class="reading-actions"><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();navigateToReading(${day.day})" title="Read Now">\uD83D\uDCD6</button><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();startTimerForDay(${day.day})" title="Start Timer">\u23F1</button></div><div class="checkbox" onclick="toggleDay(${day.day})">${day.completed?'✓':''}</div>`;
-            list.appendChild(item);
-        });
-    }
-
-    function renderBibleMap() {
-        const { progress } = getCompletedBooks(), today = getCurrentDay(), todayPlan = state.readingPlan[today-1], currentBooks = todayPlan?.books || [];
-        ['otMap','ntMap'].forEach(mapId => {
-            const map = document.getElementById(mapId); if(!map) return; map.innerHTML = '';
-            bibleBooks.filter(b => b.testament === (mapId==='otMap'?'OT':'NT')).forEach(book => {
-                const prog = progress[book.name], pc = Math.min(100, Math.round((prog.completed/prog.total)*100));
-                const isComplete = pc >= 90, isCurrent = currentBooks.includes(book.name);
-                const block = document.createElement('div');
-                block.className = `book-block${isComplete?' completed':''}${isCurrent?' current':''}${pc>0&&!isComplete?' in-progress':''}`;
-                if (pc > 0 && !isComplete) block.style.setProperty('--progress', pc+'%');
-                block.textContent = book.name; map.appendChild(block);
-            });
-        });
-    }
-
-    function renderAchievements() {
-        const grid = document.getElementById('achievementsGrid'); if(!grid) return;
-        const progress = calculateProgress(), { currentStreak } = calculateStreaks(), { completed: completedBooks } = getCompletedBooks();
-        const stats = { daysCompleted: progress.daysCompleted, percentage: progress.percentage, currentStreak, completedBooks, timerSessions: state.stats.timerSessions, fasterSessions: state.stats.fasterSessions };
-        let unlockedCount = 0;
-        grid.innerHTML = achievementsList.map(a => { const unlocked = a.check(stats); if (unlocked) unlockedCount++; return `<div class="glass-card ach-card ${unlocked?'unlocked':'locked'}"><div class="ach-icon">${a.icon}</div><div class="ach-details"><h4>${a.name}</h4><p>${a.desc}</p></div></div>`; }).join('');
-        document.getElementById('unlockedCount').textContent = unlockedCount;
-        document.getElementById('totalAchievements').textContent = achievementsList.length;
-    }
-
-    function renderWeeklyReview() {
-        const today = getCurrentDay(), weekStart = Math.max(1, today-6); let weekDays = [];
-        for (let i = weekStart; i <= today; i++) { if (state.readingPlan[i-1]) weekDays.push(state.readingPlan[i-1]); }
-        const completedDays = weekDays.filter(d => d.completed).length;
-        const completion = weekDays.length > 0 ? Math.round((completedDays/weekDays.length)*100) : 0;
-        const chapters = weekDays.filter(d => d.completed).reduce((sum,d) => sum+d.chapters, 0);
-        const timeMs = weekDays.reduce((sum,d) => sum+(d.totalReadingTimeMs||0), 0);
-        document.getElementById('weekCompletion').textContent = completion+'%';
-        document.getElementById('weekChapters').textContent = chapters;
-        document.getElementById('weekTime').textContent = formatDuration(timeMs);
-        const chart = document.getElementById('reviewChart');
-        if(chart) { chart.innerHTML = Array(7).fill(0).map((_,i) => { const dayIdx = today-6+i, dayPlan = state.readingPlan[dayIdx-1]; const height = dayPlan?.completed?'100%':'10%', bg = dayPlan?.completed?'var(--pri)':'var(--card-brd)', shadow = dayPlan?.completed?'0 0 8px var(--pri)':'none'; return `<div style="flex:1;background:${bg};height:${height};border-radius:10px;transition:height 0.8s ease;box-shadow:${shadow};"></div>`; }).join(''); }
-    }
-
-    function renderTimerHistory() {
-        const list = document.getElementById('timerHistoryList'); if(!list) return;
-        if (state.sessions.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--txt3);padding:30px;font-family:var(--font-sans);">No sessions yet.</p>'; return; }
-        list.innerHTML = state.sessions.slice(-10).reverse().map(s => `<div class="glass-card" style="padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;"><div><div class="serif" style="font-size:1.1rem;color:var(--txt);margin-bottom:4px;">Day ${s.dayNum}: ${s.passage.length>35?s.passage.substring(0,35)+'...':s.passage}</div><div style="font-size:0.75rem;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;">${new Date(s.date).toLocaleDateString()} · ${s.chapters} ch</div></div><div style="font-family:var(--font-serif);font-size:1.2rem;color:var(--pri);font-weight:600;">${formatDuration(s.durationMs)}</div></div>`).join('');
-    }
-
-    function renderSpeedAnalysis() {
-        const totalMs = state.sessions.reduce((sum,s) => sum+s.durationMs, 0), totalCh = state.sessions.reduce((sum,s) => sum+s.chapters, 0);
-        const avgSpeed = totalCh > 0 ? (totalMs/60000/totalCh).toFixed(1) : '--';
-        let efficiency = '--';
-        if (state.sessions.length > 0) { const totalEst = state.sessions.reduce((sum,s) => sum+getEstimatedReadingTime(s.chapters)*60000, 0); if (totalEst > 0) { const ratio = ((totalEst-totalMs)/totalEst*100); efficiency = ratio > 0 ? `${Math.round(ratio)}% faster` : `${Math.round(Math.abs(ratio))}% slower`; } }
-        document.getElementById('avgTimePerChapter').textContent = avgSpeed;
-        document.getElementById('totalTrackedTime').textContent = formatDuration(totalMs);
-        document.getElementById('readingEfficiency').textContent = efficiency;
-    }
-
-    function updateDaySelector() {
-        const select = document.getElementById('daySelector'); if (!select || !state.readingPlan.length) return;
-        const today = getCurrentDay();
-        select.innerHTML = '<option value="">-- Select a reading --</option>' + state.readingPlan.map(day => `<option value="${day.day}" ${day.day===today?'selected':''}> Day ${day.day}: ${day.reading.length>40?day.reading.substring(0,40)+'...':day.reading} ${day.completed?'✓':''}</option>`).join('');
-    }
-
-    function checkForMissedDays() { const missed = getMissedDays(), alert = document.getElementById('catchupAlert'); if(!alert) return; if (missed.length > 0) { alert.style.display = 'block'; document.getElementById('missedCount').textContent = missed.length; } else alert.style.display = 'none'; }
-
-    // ===== ACTIONS =====
-    function toggleDay(dayNum) { const day = state.readingPlan[dayNum-1]; day.completed = !day.completed; day.completedAt = day.completed ? new Date().toISOString() : null; saveState(); renderAll(); if (day.completed && dayNum === getCurrentDay()) showCelebration(); }
-    function toggleToday() { toggleDay(getCurrentDay()); }
-    function selectDay() { const dayNum = parseInt(document.getElementById('daySelector').value); if (dayNum && state.readingPlan[dayNum-1]) { const plan = state.readingPlan[dayNum-1]; document.getElementById('timerPassageTitle').textContent = plan.reading; document.getElementById('timerChapters').textContent = plan.chapters; document.getElementById('timerDay').textContent = dayNum; document.getElementById('timerEstimated').textContent = getEstimatedReadingTime(plan.chapters); } }
-
-    function switchTab(tabId) {
-        // Save scroll position of current active tab
-        const currentActiveTab = document.querySelector('.tab-panel.active');
-        if (currentActiveTab) {
-            tabScrollPositions[currentActiveTab.id] = window.scrollY;
-        }
-
-        document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
-        updateTimerIndicators();
-        if (tabId === 'timer' && timerState.isActive) updateTimerUI();
-        if (tabId === 'chat-tab') setTimeout(() => document.getElementById('chatInput')?.focus(), 100);
-        if (tabId === 'bible-reader') updateReaderSessionBar();
-
-        // Restore scroll position for the target tab, or scroll to top
-        if (tabScrollPositions[tabId] !== undefined) {
-            requestAnimationFrame(() => {
-                window.scrollTo(0, tabScrollPositions[tabId]);
-            });
+function renderDashboard() {
+    const today = getCurrentDay(), todayPlan = state.readingPlan[today-1];
+    const { currentStreak, longestStreak } = calculateStreaks(), progress = calculateProgress(), { completed: completedBooks } = getCompletedBooks();
+    document.getElementById('currentStreak').textContent = currentStreak;
+    document.getElementById('longestStreak').textContent = longestStreak;
+    document.getElementById('daysCompleted').textContent = progress.daysCompleted;
+    document.getElementById('booksCompleted').textContent = completedBooks.length;
+    document.getElementById('progressPercent').textContent = progress.percentage + '%';
+    document.getElementById('progressFill').style.width = progress.percentage + '%';
+    document.getElementById('chaptersRead').textContent = progress.chaptersRead + ' chapters';
+    const avgSpeed = getActualAverageSpeed();
+    document.getElementById('avgReadingSpeed').textContent = avgSpeed ? `Avg: ${avgSpeed.toFixed(1)} min/ch` : 'Avg: -- min/ch';
+    if (todayPlan) {
+        document.getElementById('todayDayNum').textContent = today;
+        document.getElementById('todayReading').textContent = todayPlan.reading;
+        const readingTime = getEstimatedReadingTime(todayPlan.chapters);
+        let timeDisplay = `~${readingTime} min`;
+        if (todayPlan.totalReadingTimeMs > 0) timeDisplay = formatDuration(todayPlan.totalReadingTimeMs) + ' tracked';
+        document.getElementById('readingTimeBadge').textContent = timeDisplay;
+        const todayBtn = document.getElementById('todayBtn'), startBtn = document.getElementById('startTimerBtn');
+        const readNowBtn = document.getElementById('readNowBtn');
+        if (todayPlan.completed) {
+            todayBtn.innerHTML = '\u2713 Completed'; todayBtn.className = 'btn btn-success';
+            startBtn.style.display = 'none';
+            if (readNowBtn) { readNowBtn.textContent = '\uD83D\uDCD6 Re-read'; readNowBtn.className = 'btn btn-secondary'; }
         } else {
-            window.scrollTo(0, 0);
+            todayBtn.innerHTML = '\u2713 Mark Complete'; todayBtn.className = 'btn btn-secondary';
+            startBtn.style.display = ''; startBtn.textContent = timerState.isActive && timerState.dayNum === today ? '\u23F1 View Timer' : '\u23F1 Timer';
+            if (readNowBtn) { readNowBtn.textContent = '\uD83D\uDCD6 Read Now'; readNowBtn.className = 'btn btn-primary'; }
         }
+        const contextBox = document.getElementById('todayContext');
+        if (todayPlan.aiContext) contextBox.innerHTML = formatAIResponse(todayPlan.aiContext);
+    }
+    renderHeatmap();
+}
+
+function renderHeatmap() {
+    const heatmap = document.getElementById('heatmap'); heatmap.innerHTML = ''; const today = getCurrentDay();
+    for (let i = 1; i <= Math.min(365, state.readingPlan.length); i++) {
+        const day = document.createElement('div'); day.className = 'heatmap-cell';
+        if (state.readingPlan[i-1]?.completed) day.classList.add('completed'); else if (i > today) day.classList.add('future');
+        if (i === today) day.classList.add('today'); day.title = `Day ${i}`;
+        day.onclick = () => { if (i <= today) toggleDay(i); }; heatmap.appendChild(day);
+    }
+}
+
+function renderReadings() {
+    const list = document.getElementById('readingList'); if(!list) return; list.innerHTML = '';
+    const today = getCurrentDay(), filter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all', search = document.getElementById('searchBox').value.toLowerCase();
+    let daysToShow = state.readingPlan.filter((day, idx) => {
+        const dayNum = idx + 1; if (search && !day.reading.toLowerCase().includes(search)) return false;
+        switch (filter) { case 'completed': return day.completed; case 'pending': return !day.completed; case 'week': return dayNum >= today && dayNum < today + 7; default: return true; }
+    });
+    daysToShow.forEach(day => {
+        const isToday = day.day === today, isMissed = day.day < today && !day.completed, hasTimer = timerState.isActive && timerState.dayNum === day.day;
+        const item = document.createElement('div');
+        item.className = `reading-item${day.completed?' completed':''}${isToday?' today':''}${isMissed?' missed':''}${hasTimer?' has-timer':''}`;
+        const estTime = getEstimatedReadingTime(day.chapters), actualTime = day.totalReadingTimeMs > 0 ? formatDuration(day.totalReadingTimeMs) : null;
+        item.innerHTML = `<div class="day-number">${day.day}</div><div class="reading-info"><div class="reading-passage">${day.reading} ${isToday?'<span class="badge badge-today" style="font-size:0.6rem;">TODAY</span>':''} ${hasTimer?'<span class="badge badge-timer" style="font-size:0.6rem;">TIMER</span>':''}</div><div class="reading-meta"><span>📖 ${day.chapters} ch</span><span>⏱️ ~${estTime}m</span>${actualTime?`<span class="actual-time">✓ ${actualTime}</span>`:''}</div></div><div class="reading-actions"><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();navigateToReading(${day.day})" title="Read Now">\uD83D\uDCD6</button><button class="icon-btn" style="width:36px;height:36px;font-size:0.9rem;" onclick="event.stopPropagation();startTimerForDay(${day.day})" title="Start Timer">\u23F1</button></div><div class="checkbox" onclick="toggleDay(${day.day})">${day.completed?'✓':''}</div>`;
+        list.appendChild(item);
+    });
+}
+
+function renderBibleMap() {
+    const { progress } = getCompletedBooks(), today = getCurrentDay(), todayPlan = state.readingPlan[today-1], currentBooks = todayPlan?.books || [];
+    ['otMap','ntMap'].forEach(mapId => {
+        const map = document.getElementById(mapId); if(!map) return; map.innerHTML = '';
+        bibleBooks.filter(b => b.testament === (mapId==='otMap'?'OT':'NT')).forEach(book => {
+            const prog = progress[book.name], pc = Math.min(100, Math.round((prog.completed/prog.total)*100));
+            const isComplete = pc >= 90, isCurrent = currentBooks.includes(book.name);
+            const block = document.createElement('div');
+            block.className = `book-block${isComplete?' completed':''}${isCurrent?' current':''}${pc>0&&!isComplete?' in-progress':''}`;
+            if (pc > 0 && !isComplete) block.style.setProperty('--progress', pc+'%');
+            block.textContent = book.name; map.appendChild(block);
+        });
+    });
+}
+
+function renderAchievements() {
+    const grid = document.getElementById('achievementsGrid'); if(!grid) return;
+    const progress = calculateProgress(), { currentStreak } = calculateStreaks(), { completed: completedBooks } = getCompletedBooks();
+    const stats = { daysCompleted: progress.daysCompleted, percentage: progress.percentage, currentStreak, completedBooks, timerSessions: state.stats.timerSessions, fasterSessions: state.stats.fasterSessions };
+    let unlockedCount = 0;
+    grid.innerHTML = achievementsList.map(a => { const unlocked = a.check(stats); if (unlocked) unlockedCount++; return `<div class="glass-card ach-card ${unlocked?'unlocked':'locked'}"><div class="ach-icon">${a.icon}</div><div class="ach-details"><h4>${a.name}</h4><p>${a.desc}</p></div></div>`; }).join('');
+    document.getElementById('unlockedCount').textContent = unlockedCount;
+    document.getElementById('totalAchievements').textContent = achievementsList.length;
+}
+
+function renderWeeklyReview() {
+    const today = getCurrentDay(), weekStart = Math.max(1, today-6); let weekDays = [];
+    for (let i = weekStart; i <= today; i++) { if (state.readingPlan[i-1]) weekDays.push(state.readingPlan[i-1]); }
+    const completedDays = weekDays.filter(d => d.completed).length;
+    const completion = weekDays.length > 0 ? Math.round((completedDays/weekDays.length)*100) : 0;
+    const chapters = weekDays.filter(d => d.completed).reduce((sum,d) => sum+d.chapters, 0);
+    const timeMs = weekDays.reduce((sum,d) => sum+(d.totalReadingTimeMs||0), 0);
+    document.getElementById('weekCompletion').textContent = completion+'%';
+    document.getElementById('weekChapters').textContent = chapters;
+    document.getElementById('weekTime').textContent = formatDuration(timeMs);
+    const chart = document.getElementById('reviewChart');
+    if(chart) { chart.innerHTML = Array(7).fill(0).map((_,i) => { const dayIdx = today-6+i, dayPlan = state.readingPlan[dayIdx-1]; const height = dayPlan?.completed?'100%':'10%', bg = dayPlan?.completed?'var(--pri)':'var(--card-brd)', shadow = dayPlan?.completed?'0 0 8px var(--pri)':'none'; return `<div style="flex:1;background:${bg};height:${height};border-radius:10px;transition:height 0.8s ease;box-shadow:${shadow};"></div>`; }).join(''); }
+}
+
+function renderTimerHistory() {
+    const list = document.getElementById('timerHistoryList'); if(!list) return;
+    if (state.sessions.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--txt3);padding:30px;font-family:var(--font-sans);">No sessions yet.</p>'; return; }
+    list.innerHTML = state.sessions.slice(-10).reverse().map(s => `<div class="glass-card" style="padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;"><div><div class="serif" style="font-size:1.1rem;color:var(--txt);margin-bottom:4px;">Day ${s.dayNum}: ${s.passage.length>35?s.passage.substring(0,35)+'...':s.passage}</div><div style="font-size:0.75rem;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;">${new Date(s.date).toLocaleDateString()} · ${s.chapters} ch</div></div><div style="font-family:var(--font-serif);font-size:1.2rem;color:var(--pri);font-weight:600;">${formatDuration(s.durationMs)}</div></div>`).join('');
+}
+
+function renderSpeedAnalysis() {
+    const totalMs = state.sessions.reduce((sum,s) => sum+s.durationMs, 0), totalCh = state.sessions.reduce((sum,s) => sum+s.chapters, 0);
+    const avgSpeed = totalCh > 0 ? (totalMs/60000/totalCh).toFixed(1) : '--';
+    let efficiency = '--';
+    if (state.sessions.length > 0) { const totalEst = state.sessions.reduce((sum,s) => sum+getEstimatedReadingTime(s.chapters)*60000, 0); if (totalEst > 0) { const ratio = ((totalEst-totalMs)/totalEst*100); efficiency = ratio > 0 ? `${Math.round(ratio)}% faster` : `${Math.round(Math.abs(ratio))}% slower`; } }
+    document.getElementById('avgTimePerChapter').textContent = avgSpeed;
+    document.getElementById('totalTrackedTime').textContent = formatDuration(totalMs);
+    document.getElementById('readingEfficiency').textContent = efficiency;
+}
+
+function updateDaySelector() {
+    const select = document.getElementById('daySelector'); if (!select || !state.readingPlan.length) return;
+    const today = getCurrentDay();
+    select.innerHTML = '<option value="">-- Select a reading --</option>' + state.readingPlan.map(day => `<option value="${day.day}" ${day.day===today?'selected':''}> Day ${day.day}: ${day.reading.length>40?day.reading.substring(0,40)+'...':day.reading} ${day.completed?'✓':''}</option>`).join('');
+}
+
+function checkForMissedDays() { const missed = getMissedDays(), alert = document.getElementById('catchupAlert'); if(!alert) return; if (missed.length > 0) { alert.style.display = 'block'; document.getElementById('missedCount').textContent = missed.length; } else alert.style.display = 'none'; }
+
+// ===== ACTIONS =====
+function toggleDay(dayNum) { const day = state.readingPlan[dayNum-1]; day.completed = !day.completed; day.completedAt = day.completed ? new Date().toISOString() : null; saveState(); renderAll(); if (day.completed && dayNum === getCurrentDay()) showCelebration(); }
+function toggleToday() { toggleDay(getCurrentDay()); }
+function selectDay() { const dayNum = parseInt(document.getElementById('daySelector').value); if (dayNum && state.readingPlan[dayNum-1]) { const plan = state.readingPlan[dayNum-1]; document.getElementById('timerPassageTitle').textContent = plan.reading; document.getElementById('timerChapters').textContent = plan.chapters; document.getElementById('timerDay').textContent = dayNum; document.getElementById('timerEstimated').textContent = getEstimatedReadingTime(plan.chapters); } }
+
+function switchTab(tabId) {
+    // Save scroll position of current active tab
+    const currentActiveTab = document.querySelector('.tab-panel.active');
+    if (currentActiveTab) {
+        tabScrollPositions[currentActiveTab.id] = window.scrollY;
     }
 
-    function setFilter(filter) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${filter}"]`).classList.add('active'); renderReadings(); }
-    function filterReadings() { renderReadings(); }
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
+    updateTimerIndicators();
+    if (tabId === 'timer' && timerState.isActive) updateTimerUI();
+    if (tabId === 'chat-tab') setTimeout(() => document.getElementById('chatInput')?.focus(), 100);
+    if (tabId === 'bible-reader') updateReaderSessionBar();
 
-    // ===== SETTINGS =====
-    function applySettings() {
-        const isLight = state.settings.theme === 'light';
-        document.documentElement.setAttribute('data-theme', state.settings.theme);
-        const themeBtn = document.getElementById('themeToggleBtn'); if (themeBtn) themeBtn.textContent = isLight ? '🌙' : '☀️';
-        const modalToggle = document.getElementById('themeToggle'); if (modalToggle) modalToggle.classList.toggle('active', isLight);
-        const sizes = { small: '14px', normal: '16px', large: '18px' }; document.body.style.fontSize = sizes[state.settings.fontSize] || '16px';
-        const floatingToggle = document.getElementById('floatingTimerToggle'); if (floatingToggle) floatingToggle.classList.toggle('active', state.settings.showFloatingTimer);
+    // Restore scroll position for the target tab, or scroll to top
+    if (tabScrollPositions[tabId] !== undefined) {
+        requestAnimationFrame(() => {
+            window.scrollTo(0, tabScrollPositions[tabId]);
+        });
+    } else {
+        window.scrollTo(0, 0);
     }
+}
 
-    function toggleTheme() { state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light'; saveState(); applySettings(); }
-    function setFontSize(size) { state.settings.fontSize = size; saveState(); applySettings(); }
-    function setReadingSpeed(speed) { state.settings.readingSpeed = speed; saveState(); renderAll(); }
-    function toggleSetting(setting) { state.settings[setting] = !state.settings[setting]; saveState(); applySettings(); if (setting==='showFloatingTimer' && !state.settings.showFloatingTimer) hideFloatingTimer(); else if (setting==='showFloatingTimer' && state.settings.showFloatingTimer && timerState.isRunning) showFloatingTimer(); }
-    function openSettings() { openModal('settingsModal'); document.getElementById('fontSizeSelect').value = state.settings.fontSize; document.getElementById('readingSpeedSelect').value = state.settings.readingSpeed; }
+function setFilter(filter) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${filter}"]`).classList.add('active'); renderReadings(); }
+function filterReadings() { renderReadings(); }
 
-    // ===== MODALS =====
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+// ===== SETTINGS =====
+function applySettings() {
+    const isLight = state.settings.theme === 'light';
+    document.documentElement.setAttribute('data-theme', state.settings.theme);
+    const themeBtn = document.getElementById('themeToggleBtn'); if (themeBtn) themeBtn.textContent = isLight ? '🌙' : '☀️';
+    const modalToggle = document.getElementById('themeToggle'); if (modalToggle) modalToggle.classList.toggle('active', isLight);
+    const sizes = { small: '14px', normal: '16px', large: '18px' }; document.body.style.fontSize = sizes[state.settings.fontSize] || '16px';
+    const floatingToggle = document.getElementById('floatingTimerToggle'); if (floatingToggle) floatingToggle.classList.toggle('active', state.settings.showFloatingTimer);
+}
 
-    // ===== PLANS =====
-    function selectPlan(planType) { document.querySelectorAll('.plan-option').forEach(p => p.classList.remove('selected')); document.querySelector(`[data-plan="${planType}"]`)?.classList.add('selected'); state.planType = planType; }
-    function openPlanSelector() { document.getElementById('planStartDate').valueAsDate = new Date(); openModal('planModal'); }
+function toggleTheme() { state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light'; saveState(); applySettings(); }
+function setFontSize(size) { state.settings.fontSize = size; saveState(); applySettings(); }
+function setReadingSpeed(speed) { state.settings.readingSpeed = speed; saveState(); renderAll(); }
+function toggleSetting(setting) { state.settings[setting] = !state.settings[setting]; saveState(); applySettings(); if (setting==='showFloatingTimer' && !state.settings.showFloatingTimer) hideFloatingTimer(); else if (setting==='showFloatingTimer' && state.settings.showFloatingTimer && timerState.isRunning) showFloatingTimer(); }
+function openSettings() { openModal('settingsModal'); document.getElementById('fontSizeSelect').value = state.settings.fontSize; document.getElementById('readingSpeedSelect').value = state.settings.readingSpeed; }
 
-    function initializePlan() {
-        const startDate = document.getElementById('startDateInput').value; if (!startDate) { alert('Please select a start date'); return; }
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===== PLANS =====
+function selectPlan(planType) { document.querySelectorAll('.plan-option').forEach(p => p.classList.remove('selected')); document.querySelector(`[data-plan="${planType}"]`)?.classList.add('selected'); state.planType = planType; }
+function openPlanSelector() { document.getElementById('planStartDate').valueAsDate = new Date(); openModal('planModal'); }
+
+function initializePlan() {
+    const startDate = document.getElementById('startDateInput').value; if (!startDate) { alert('Please select a start date'); return; }
+    state.startDate = new Date(startDate); state.startDate.setHours(0,0,0,0);
+    const days = getPlanDays(state.planType); state.readingPlan = generateReadingPlan(state.planType, days);
+    state.sessions = []; state.stats = { timerSessions: 0, fasterSessions: 0 }; clearTimerState(); saveState(); closeModal('startModal'); renderAll();
+}
+
+function startPlan() {
+    const startDate = document.getElementById('planStartDate').value; if (!startDate) { alert('Please select a start date'); return; }
+    if (confirm('This will reset your current progress. Continue?')) {
         state.startDate = new Date(startDate); state.startDate.setHours(0,0,0,0);
         const days = getPlanDays(state.planType); state.readingPlan = generateReadingPlan(state.planType, days);
-        state.sessions = []; state.stats = { timerSessions: 0, fasterSessions: 0 }; clearTimerState(); saveState(); closeModal('startModal'); renderAll();
+        state.sessions = []; state.stats = { timerSessions: 0, fasterSessions: 0 }; clearTimerState(); saveState(); closeModal('planModal'); renderAll();
     }
+}
 
-    function startPlan() {
-        const startDate = document.getElementById('planStartDate').value; if (!startDate) { alert('Please select a start date'); return; }
-        if (confirm('This will reset your current progress. Continue?')) {
-            state.startDate = new Date(startDate); state.startDate.setHours(0,0,0,0);
-            const days = getPlanDays(state.planType); state.readingPlan = generateReadingPlan(state.planType, days);
-            state.sessions = []; state.stats = { timerSessions: 0, fasterSessions: 0 }; clearTimerState(); saveState(); closeModal('planModal'); renderAll();
-        }
-    }
+// ===== CATCH-UP =====
+function openCatchup() { document.getElementById('catchupMissed').textContent = getMissedDays().length; openModal('catchupModal'); }
+function applyCatchup(method) { if (method === 'double') alert("Try to read the missed passages along with today's reading!"); closeModal('catchupModal'); }
 
-    // ===== CATCH-UP =====
-    function openCatchup() { document.getElementById('catchupMissed').textContent = getMissedDays().length; openModal('catchupModal'); }
-    function applyCatchup(method) { if (method === 'double') alert("Try to read the missed passages along with today's reading!"); closeModal('catchupModal'); }
+// ===== CELEBRATION =====
+function showCelebration() {
+    const { currentStreak } = calculateStreaks(), progress = calculateProgress();
+    let emoji = '🎉', title = 'Great Job!', text = "You completed today's reading!";
+    if (currentStreak === 7) { emoji = '🔥'; title = 'Week Warrior!'; text = '7-day streak achieved!'; }
+    else if (currentStreak === 30) { emoji = '🏆'; title = 'Monthly Master!'; text = '30-day streak! Incredible!'; }
+    else if (progress.percentage === 100) { emoji = '👑'; title = 'CONGRATULATIONS!'; text = "You've completed the entire reading plan!"; }
+    else if (currentStreak > 1) text = `${currentStreak} day streak! Keep it up!`;
+    document.getElementById('celebrationEmoji').textContent = emoji;
+    document.getElementById('celebrationTitle').textContent = title;
+    document.getElementById('celebrationText').textContent = text;
+    openModal('celebrationModal'); createConfetti();
+}
+function closeCelebration() { closeModal('celebrationModal'); }
 
-    // ===== CELEBRATION =====
-    function showCelebration() {
-        const { currentStreak } = calculateStreaks(), progress = calculateProgress();
-        let emoji = '🎉', title = 'Great Job!', text = "You completed today's reading!";
-        if (currentStreak === 7) { emoji = '🔥'; title = 'Week Warrior!'; text = '7-day streak achieved!'; }
-        else if (currentStreak === 30) { emoji = '🏆'; title = 'Monthly Master!'; text = '30-day streak! Incredible!'; }
-        else if (progress.percentage === 100) { emoji = '👑'; title = 'CONGRATULATIONS!'; text = "You've completed the entire reading plan!"; }
-        else if (currentStreak > 1) text = `${currentStreak} day streak! Keep it up!`;
-        document.getElementById('celebrationEmoji').textContent = emoji;
-        document.getElementById('celebrationTitle').textContent = title;
-        document.getElementById('celebrationText').textContent = text;
-        openModal('celebrationModal'); createConfetti();
-    }
-    function closeCelebration() { closeModal('celebrationModal'); }
+function createConfetti() {
+    const container = document.getElementById('confetti'); container.innerHTML = '';
+    const colors = ['#B89047','#d1b47b','#6B8E6B','#C99A5C','#8BA8B8'];
+    for (let i = 0; i < 50; i++) { const p = document.createElement('div'); p.className = 'confetti-piece'; p.style.left = Math.random()*100+'%'; p.style.background = colors[Math.floor(Math.random()*colors.length)]; p.style.animationDelay = Math.random()*2+'s'; p.style.animationDuration = (2+Math.random()*2)+'s'; container.appendChild(p); }
+    setTimeout(() => container.innerHTML = '', 4000);
+}
 
-    function createConfetti() {
-        const container = document.getElementById('confetti'); container.innerHTML = '';
-        const colors = ['#B89047','#d1b47b','#6B8E6B','#C99A5C','#8BA8B8'];
-        for (let i = 0; i < 50; i++) { const p = document.createElement('div'); p.className = 'confetti-piece'; p.style.left = Math.random()*100+'%'; p.style.background = colors[Math.floor(Math.random()*colors.length)]; p.style.animationDelay = Math.random()*2+'s'; p.style.animationDuration = (2+Math.random()*2)+'s'; container.appendChild(p); }
-        setTimeout(() => container.innerHTML = '', 4000);
-    }
+// ===== EXPORT =====
+function exportData(format) {
+    let data, filename, type;
+    if (format === 'json') { data = JSON.stringify({ state, timerState, exportedAt: new Date().toISOString() }, null, 2); filename = 'bible-tracker-export.json'; type = 'application/json'; }
+    else { let csv = 'Day,Reading,Chapters,Completed,CompletedAt,ReadingTimeMinutes\n'; state.readingPlan.forEach(d => { const timeMin = d.totalReadingTimeMs ? Math.round(d.totalReadingTimeMs/60000) : 0; csv += `${d.day},"${d.reading}",${d.chapters},${d.completed},${d.completedAt||''},${timeMin}\n`; }); data = csv; filename = 'bible-tracker-export.csv'; type = 'text/csv'; }
+    const blob = new Blob([data], { type }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+}
 
-    // ===== EXPORT =====
-    function exportData(format) {
-        let data, filename, type;
-        if (format === 'json') { data = JSON.stringify({ state, timerState, exportedAt: new Date().toISOString() }, null, 2); filename = 'bible-tracker-export.json'; type = 'application/json'; }
-        else { let csv = 'Day,Reading,Chapters,Completed,CompletedAt,ReadingTimeMinutes\n'; state.readingPlan.forEach(d => { const timeMin = d.totalReadingTimeMs ? Math.round(d.totalReadingTimeMs/60000) : 0; csv += `${d.day},"${d.reading}",${d.chapters},${d.completed},${d.completedAt||''},${timeMin}\n`; }); data = csv; filename = 'bible-tracker-export.csv'; type = 'text/csv'; }
-        const blob = new Blob([data], { type }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
-    }
+// ===== RESET =====
+function resetProgress() { if (confirm('Are you sure you want to reset ALL progress?')) { if (confirm('Really sure? All data will be lost forever.')) { localStorage.removeItem('bibleTrackerState'); localStorage.removeItem('bibleTrackerTimer'); location.reload(); } } }
 
-    // ===== RESET =====
-    function resetProgress() { if (confirm('Are you sure you want to reset ALL progress?')) { if (confirm('Really sure? All data will be lost forever.')) { localStorage.removeItem('bibleTrackerState'); localStorage.removeItem('bibleTrackerTimer'); location.reload(); } } }
+// ===== WINDOW EVENTS =====
+window.addEventListener('beforeunload', () => { if (timerState.isActive) { if (timerState.isRunning && timerState.startedAt) { timerState.accumulatedMs += Date.now()-timerState.startedAt; timerState.isRunning = false; timerState.pausedAt = Date.now(); timerState.startedAt = null; } saveTimerState(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && timerState.isActive) { updateTimerUI(); updateTimerIndicators(); } });
 
-    // ===== WINDOW EVENTS =====
-    window.addEventListener('beforeunload', () => { if (timerState.isActive) { if (timerState.isRunning && timerState.startedAt) { timerState.accumulatedMs += Date.now()-timerState.startedAt; timerState.isRunning = false; timerState.pausedAt = Date.now(); timerState.startedAt = null; } saveTimerState(); } });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && timerState.isActive) { updateTimerUI(); updateTimerIndicators(); } });
-
-    init();
-    </script>
+init();
+</script>
 </body>
 </html>
