@@ -16,7 +16,7 @@ export default async function handler(req, res) {
         // Initialize Gemini using the secure environment variable
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         // Using the 2.5 flash model you requested
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
 
         const prompt = `You are a helpful and knowledgeable Bible scholar. Provide a brief, engaging, and easy-to-understand historical and theological context for the following Bible passage before someone reads it. Keep it under 150 words. The passage is: ${passage}`;
 
