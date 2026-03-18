@@ -46,6 +46,11 @@
             --bg-color: #0A0612;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
             font-family: var(--font-sans); color: var(--txt); line-height: 1.6;
             min-height: 100vh; transition: color 0.5s ease;
@@ -81,7 +86,7 @@
         .app-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 32px 24px 16px; position: relative; z-index: 10;
-            max-width: 800px; margin: 0 auto;
+            max-width: 1200px; margin: 0 auto;
         }
         .header-titles h1 { font-size: 2.2rem; color: var(--txt); letter-spacing: 0.5px; }
         .header-titles .subtitle { font-size: 0.85rem; color: var(--txt2); font-weight: 400; text-transform: uppercase; letter-spacing: 2px; margin-top: -4px; }
@@ -136,7 +141,7 @@
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
 
         /* Main Content */
-        .main-content { max-width: 800px; margin: 0 auto; padding: 0 20px calc(140px + env(safe-area-inset-bottom)); position: relative; z-index: 5; }
+        .main-content { max-width: 1200px; margin: 0 auto; padding: 0 20px calc(140px + env(safe-area-inset-bottom)); position: relative; z-index: 5; }
         .tab-panel { display: none; animation: floatUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; opacity: 0; }
         .tab-panel.active { display: block; }
         @keyframes floatUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -426,6 +431,12 @@
         /* ===== Responsive ===== */
         @supports (padding: env(safe-area-inset-top)) {
             .app-header { padding-top: calc(16px + env(safe-area-inset-top)); }
+        }
+
+        /* Tablet breakpoint adjustments */
+        @media (max-width: 1024px) {
+            .app-header { max-width: 100%; padding-left: 20px; padding-right: 20px; }
+            .main-content { max-width: 100%; padding-left: 20px; padding-right: 20px; }
         }
 
         @media (max-width: 480px) {
@@ -840,6 +851,7 @@
             <p class="subtitle">Read · Reflect · Grow</p>
         </div>
         <div class="header-controls">
+            <button class="icon-btn" onclick="toggleFullScreen()" id="fullscreenBtn" title="Toggle Fullscreen">⤢</button>
             <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Theme">🌙</button>
             <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
         </div>
@@ -1407,6 +1419,43 @@
     let mediaRecorder;
     let audioChunks = [];
     let isRecording = false;
+
+    // ===== FULL SCREEN API =====
+    function toggleFullScreen() {
+        const doc = window.document;
+        const docEl = doc.documentElement;
+
+        const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+        const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+        if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+            if (requestFullScreen) {
+                requestFullScreen.call(docEl).catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                alert("Fullscreen API is not supported on this browser (e.g., iOS Safari). Please use 'Add to Home Screen' to launch fullscreen.");
+            }
+        } else {
+            if (cancelFullScreen) {
+                cancelFullScreen.call(doc);
+            }
+        }
+    }
+
+    // Update Fullscreen Icon automatically
+    document.addEventListener('fullscreenchange', updateFullscreenIcon);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+    document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
+    document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
+
+    function updateFullscreenIcon() {
+        const btn = document.getElementById('fullscreenBtn');
+        if (!btn) return;
+        const isFull = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+        btn.innerHTML = isFull ? '⤡' : '⤢';
+    }
+
 
     // ===== READ NOW INTEGRATION =====
 
