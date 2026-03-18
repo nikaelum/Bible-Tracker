@@ -915,7 +915,6 @@
         </section>
 
         <!-- Bible Reader Tab -->
-        <!-- Bible Reader Tab -->
         <section id="bible-reader" class="tab-panel">
 
             <!-- Compact Top Bar -->
@@ -1147,11 +1146,13 @@
                 </div>
             </div>
             <div class="glass-card" style="text-align:center;">
-                <h3 class="serif" style="margin-bottom:16px;">💾 Export Data</h3>
-                <p style="font-size:0.85rem; color:var(--txt2); margin-bottom:24px;">Download a backup of your reading progress.</p>
+                <h3 class="serif" style="margin-bottom:16px;">💾 Data Sync & Export</h3>
+                <p style="font-size:0.85rem; color:var(--txt2); margin-bottom:24px;">Download a backup or merge progress from another device.</p>
                 <div style="display: flex; gap: 12px; justify-content:center; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" onclick="exportData('json')">📄 JSON</button>
-                    <button class="btn btn-secondary" onclick="exportData('csv')">📊 CSV</button>
+                    <button class="btn btn-secondary" onclick="exportData('json')">📄 Export JSON</button>
+                    <button class="btn btn-secondary" onclick="exportData('csv')">📊 Export CSV</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('importFileInput').click()">🔄 Import / Merge</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportData(event)">
                 </div>
             </div>
         </section>
@@ -2648,6 +2649,81 @@
         if (format === 'json') { data = JSON.stringify({ state, timerState, exportedAt: new Date().toISOString() }, null, 2); filename = 'bible-tracker-export.json'; type = 'application/json'; }
         else { let csv = 'Day,Reading,Chapters,Completed,CompletedAt,ReadingTimeMinutes\n'; state.readingPlan.forEach(d => { const timeMin = d.totalReadingTimeMs ? Math.round(d.totalReadingTimeMs/60000) : 0; csv += `${d.day},"${d.reading}",${d.chapters},${d.completed},${d.completedAt||''},${timeMin}\n`; }); data = csv; filename = 'bible-tracker-export.csv'; type = 'text/csv'; }
         const blob = new Blob([data], { type }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // ===== IMPORT / MERGE =====
+    function handleImportData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (!importedData.state) {
+                    alert("Invalid backup file format.");
+                    return;
+                }
+
+                const importedState = importedData.state;
+
+                // 1. If current device has no active plan, just load everything
+                if (!state.startDate && importedState.startDate) {
+                    state = { ...state, ...importedState };
+                    if (state.startDate) state.startDate = new Date(state.startDate);
+                } else {
+                    // 2. Merge Sessions (Deduplicate by unique ID/timestamp)
+                    const existingSessionIds = new Set((state.sessions || []).map(s => s.id));
+                    const newSessions = (importedState.sessions || []).filter(s => !existingSessionIds.has(s.id));
+                    state.sessions = [...(state.sessions || []), ...newSessions].sort((a, b) => a.id - b.id);
+                    state.stats.timerSessions = state.sessions.length;
+
+                    // Recalculate "faster" sessions based on merged array
+                    let fasterCount = 0;
+                    state.sessions.forEach(s => {
+                        const estMs = getEstimatedReadingTime(s.chapters) * 60000;
+                        if (s.durationMs < estMs) fasterCount++;
+                    });
+                    state.stats.fasterSessions = fasterCount;
+
+                    // 3. Merge Reading Plan Checkmarks
+                    if (state.planType === importedState.planType && state.readingPlan && importedState.readingPlan) {
+                        const len = Math.min(state.readingPlan.length, importedState.readingPlan.length);
+                        for (let i = 0; i < len; i++) {
+                            const currentDay = state.readingPlan[i];
+                            const importedDay = importedState.readingPlan[i];
+
+                            // Add checkmark if it was completed on the other device
+                            if (importedDay.completed && !currentDay.completed) {
+                                currentDay.completed = true;
+                                currentDay.completedAt = importedDay.completedAt;
+                            }
+                            
+                            // Merge time (Use max to avoid runaway duplicate compounding if re-imported)
+                            currentDay.totalReadingTimeMs = Math.max(currentDay.totalReadingTimeMs || 0, importedDay.totalReadingTimeMs || 0);
+                            
+                            // Merge AI Context if missing on this device
+                            if (!currentDay.aiContext && importedDay.aiContext) {
+                                currentDay.aiContext = importedDay.aiContext;
+                            }
+                        }
+                    } else {
+                        alert("The imported file uses a different reading plan. Timer sessions were merged, but daily checkmarks could not be combined.");
+                    }
+                }
+
+                saveState();
+                renderAll();
+                alert("✅ Data merged successfully!");
+            } catch (err) {
+                console.error("Import Error:", err);
+                alert("Error parsing the backup file. Ensure it is a valid JSON export.");
+            }
+        };
+        reader.readAsText(file);
+        
+        // Reset input to allow re-selection of the same file later
+        event.target.value = "";
     }
 
     // ===== RESET =====
