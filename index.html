@@ -377,10 +377,6 @@
 
         /* ===== CHAT TAB ===== */
         body.chat-active-body {
-            position: fixed !important;
-            width: 100% !important;
-            left: 0 !important;
-            right: 0 !important;
             overflow: hidden !important;
         }
 
@@ -2119,21 +2115,116 @@
         }
     }
 
+    var _readerScrollVerse = null;
+
+    function saveReaderPosition() {
+        var textArea = document.getElementById('bibleTextArea');
+        if (!textArea) { _readerScrollVerse = null; return; }
+        var verses = textArea.querySelectorAll('.verse-wrapper[data-verse]');
+        if (!verses.length) { _readerScrollVerse = null; return; }
+        _readerScrollVerse = null;
+        for (var i = 0; i < verses.length; i++) {
+            var rect = verses[i].getBoundingClientRect();
+            if (rect.bottom > 60) {
+                _readerScrollVerse = verses[i].dataset.verse;
+                break;
+            }
+        }
+    }
+
+    function restoreReaderPosition() {
+        if (_readerScrollVerse) {
+            var verseId = _readerScrollVerse;
+            setTimeout(function() {
+                var el = document.querySelector('.verse-wrapper[data-verse="' + verseId + '"]');
+                if (el) {
+                    el.scrollIntoView({ block: 'start', behavior: 'instant' });
+                    window.scrollBy(0, -20);
+                }
+            }, 80);
+        } else {
+            var pos = tabScrollPositions['bible-reader'];
+            if (pos !== undefined && pos > 0) {
+                setTimeout(function() { window.scrollTo(0, pos); }, 80);
+            } else {
+                window.scrollTo(0, 0);
+            }
+        }
+    }
+
+    function switchTab(tabId) {
+        var currentActiveTab = document.querySelector('.tab-panel.active');
+        var currentTabId = currentActiveTab ? currentActiveTab.id : null;
+
+        // Save scroll position for current tab before switching
+        if (currentTabId && currentTabId !== 'chat-tab') {
+            tabScrollPositions[currentTabId] = window.pageYOffset || document.documentElement.scrollTop || 0;
+        }
+        // Save verse-level position if leaving bible-reader
+        if (currentTabId === 'bible-reader') {
+            saveReaderPosition();
+        }
+
+        // Unlock body if leaving chat
+        if (document.body.classList.contains('chat-active-body')) {
+            document.body.classList.remove('chat-active-body');
+        }
+
+        // Switch active panels
+        document.querySelectorAll('.tab-panel').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tab-btn').forEach(function(t) { t.classList.remove('active'); });
+        document.getElementById(tabId).classList.add('active');
+        var tabBtn = document.querySelector('[data-tab="' + tabId + '"]');
+        if (tabBtn) tabBtn.classList.add('active');
+
+        // Hide app header for immersive tabs
+        var appHeader = document.querySelector('.app-header');
+        if (appHeader) {
+            appHeader.style.display = (tabId === 'chat-tab' || tabId === 'bible-reader') ? 'none' : '';
+        }
+
+        // Lock body scroll for chat
+        if (tabId === 'chat-tab') {
+            document.body.classList.add('chat-active-body');
+        }
+
+        updateTimerIndicators();
+        if (tabId === 'timer' && timerState.isActive) updateTimerUI();
+
+        if (tabId === 'chat-tab') {
+            setTimeout(function() {
+                var ci = document.getElementById('chatInput');
+                if (ci) ci.focus();
+            }, 100);
+        }
+
+        // Restore scroll position
+        if (tabId === 'bible-reader') {
+            restoreReaderPosition();
+        } else if (tabId !== 'chat-tab') {
+            var pos = tabScrollPositions[tabId];
+            if (pos !== undefined && pos > 0) {
+                setTimeout(function() { window.scrollTo(0, pos); }, 50);
+            } else {
+                window.scrollTo(0, 0);
+            }
+        }
+    }
+
     function askAIAboutSelection() {
         var tooltip = document.getElementById('askAiTooltip');
         tooltip.classList.remove('show');
 
-        // Explicitly save reader scroll position before switching
+        // Explicitly save verse position before switching away
         var readerTab = document.getElementById('bible-reader');
         if (readerTab && readerTab.classList.contains('active')) {
-            tabScrollPositions['bible-reader'] = window.scrollY || document.documentElement.scrollTop || 0;
+            saveReaderPosition();
         }
 
         if (selectedVerses.size > 0) {
-            var vArray = Array.from(selectedVerses).map(Number).sort(function(a,b){ return a-b; });
+            var vArray = Array.from(selectedVerses).map(Number).sort(function(a, b) { return a - b; });
             var bookName = document.getElementById('bibleBookSelect').value;
             var chapter = document.getElementById('bibleChapterSelect').value;
-
             var refVerses = formatVerseRanges(vArray);
             var verseRef = bookName + ' ' + chapter + ':' + refVerses;
 
@@ -2718,81 +2809,6 @@
     function toggleDay(dayNum) { const day = state.readingPlan[dayNum-1]; day.completed = !day.completed; day.completedAt = day.completed ? new Date().toISOString() : null; saveState(); renderAll(); if (day.completed && dayNum === getCurrentDay()) showCelebration(); }
     function toggleToday() { toggleDay(getCurrentDay()); }
     function selectDay() { const dayNum = parseInt(document.getElementById('daySelector').value); if (dayNum && state.readingPlan[dayNum-1]) { const plan = state.readingPlan[dayNum-1]; document.getElementById('timerPassageTitle').textContent = plan.reading; document.getElementById('timerChapters').textContent = plan.chapters; document.getElementById('timerDay').textContent = dayNum; document.getElementById('timerEstimated').textContent = getEstimatedReadingTime(plan.chapters); } }
-
-    function switchTab(tabId) {
-        var currentActiveTab = document.querySelector('.tab-panel.active');
-
-        // Save scroll position BEFORE any DOM changes
-        if (currentActiveTab) {
-            if (document.body.classList.contains('chat-active-body')) {
-                // Body is fixed-positioned; real scroll is stored in body.style.top
-                var bodyTop = parseInt(document.body.style.top || '0');
-                tabScrollPositions[currentActiveTab.id] = 0; // chat doesn't use window scroll
-                // Preserve the underlying page scroll that was saved in body.top
-                var underlyingScroll = Math.abs(bodyTop);
-                // Don't overwrite the saved reader/other scroll positions
-            } else {
-                tabScrollPositions[currentActiveTab.id] = window.scrollY || document.documentElement.scrollTop || 0;
-            }
-        }
-
-        // If leaving chat-active, unlock body and restore underlying scroll
-        if (document.body.classList.contains('chat-active-body')) {
-            var savedBodyTop = Math.abs(parseInt(document.body.style.top || '0'));
-            document.body.classList.remove('chat-active-body');
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            // Temporarily restore scroll so layout is correct
-            window.scrollTo(0, savedBodyTop);
-        }
-
-        // Switch active panels
-        document.querySelectorAll('.tab-panel').forEach(function(t) { t.classList.remove('active'); });
-        document.querySelectorAll('.tab-btn').forEach(function(t) { t.classList.remove('active'); });
-        document.getElementById(tabId).classList.add('active');
-        var tabBtn = document.querySelector('[data-tab="' + tabId + '"]');
-        if (tabBtn) tabBtn.classList.add('active');
-
-        // Hide app header for immersive tabs
-        var appHeader = document.querySelector('.app-header');
-        if (appHeader) {
-            appHeader.style.display = (tabId === 'chat-tab' || tabId === 'bible-reader') ? 'none' : '';
-        }
-
-        // If entering chat, lock body scroll while preserving position
-        if (tabId === 'chat-tab') {
-            var scrollBefore = window.scrollY || document.documentElement.scrollTop || 0;
-            document.body.style.position = 'fixed';
-            document.body.style.top = '-' + scrollBefore + 'px';
-            document.body.style.width = '100%';
-            document.body.classList.add('chat-active-body');
-        }
-
-        updateTimerIndicators();
-        if (tabId === 'timer' && timerState.isActive) updateTimerUI();
-        if (tabId === 'chat-tab') {
-            setTimeout(function() {
-                var ci = document.getElementById('chatInput');
-                if (ci) ci.focus();
-            }, 100);
-        }
-
-        // Restore scroll position for non-chat tabs
-        if (tabId !== 'chat-tab') {
-            var savedPos = tabScrollPositions[tabId];
-            if (savedPos !== undefined && savedPos > 0) {
-                // Double RAF ensures layout is fully settled before scrolling
-                requestAnimationFrame(function() {
-                    requestAnimationFrame(function() {
-                        window.scrollTo(0, savedPos);
-                    });
-                });
-            } else {
-                window.scrollTo(0, 0);
-            }
-        }
-    }
 
     function setFilter(filter) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${filter}"]`).classList.add('active'); renderReadings(); }
     function filterReadings() { renderReadings(); }
