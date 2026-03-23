@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-layout="mobile">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
@@ -49,6 +48,7 @@
         html, body {
             width: 100%;
             height: 100%;
+            overflow-x: hidden;
         }
 
         body {
@@ -86,7 +86,7 @@
         .app-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 32px 24px 16px; position: relative; z-index: 10;
-            max-width: 1200px; margin: 0 auto;
+            max-width: 1200px; margin: 0 auto; transition: padding 0.3s ease;
         }
         .header-titles h1 { font-size: 2.2rem; color: var(--txt); letter-spacing: 0.5px; }
         .header-titles .subtitle { font-size: 0.85rem; color: var(--txt2); font-weight: 400; text-transform: uppercase; letter-spacing: 2px; margin-top: -4px; }
@@ -99,7 +99,7 @@
         }
         .icon-btn:hover { transform: scale(1.05); color: var(--pri); border-color: var(--pri); }
 
-        /* Bottom Tab Nav */
+        /* Bottom Tab Nav (Mobile Default) */
         .tab-nav {
             display: flex; background: var(--card-bg); border: 1px solid var(--card-brd);
             backdrop-filter: var(--glass-blur); position: fixed;
@@ -108,7 +108,7 @@
             z-index: 100; width: calc(100% - 32px); max-width: 700px;
             border-radius: var(--rad-pill); box-shadow: var(--sh-glow); padding: 8px;
             justify-content: space-between; overflow-x: auto; -webkit-overflow-scrolling: touch;
-            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease, width 0.3s, height 0.3s, left 0.3s, padding 0.3s;
             will-change: transform;
         }
         .tab-nav.nav-hidden {
@@ -141,7 +141,7 @@
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
 
         /* Main Content */
-        .main-content { max-width: 1200px; margin: 0 auto; padding: 0 20px calc(140px + env(safe-area-inset-bottom)); position: relative; z-index: 5; }
+        .main-content { max-width: 1200px; margin: 0 auto; padding: 0 20px calc(140px + env(safe-area-inset-bottom)); position: relative; z-index: 5; transition: padding-left 0.3s ease; }
         .tab-panel { display: none; animation: floatUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; opacity: 0; }
         .tab-panel.active { display: block; }
         @keyframes floatUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -428,110 +428,6 @@
         .loading-dots::after { content: ''; animation: dots 1.5s steps(5, end) infinite; }
         @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
 
-        /* ===== Responsive ===== */
-        @supports (padding: env(safe-area-inset-top)) {
-            .app-header { padding-top: calc(16px + env(safe-area-inset-top)); }
-        }
-
-        /* Tablet breakpoint adjustments */
-        @media (max-width: 1024px) {
-            .app-header { max-width: 100%; padding-left: 20px; padding-right: 20px; }
-            .main-content { max-width: 100%; padding-left: 20px; padding-right: 20px; }
-        }
-
-        @media (max-width: 480px) {
-            .app-header { padding: calc(12px + env(safe-area-inset-top)) 16px 12px; }
-            .header-titles h1 { font-size: 1.8rem; }
-            .header-titles .subtitle { font-size: 0.72rem; letter-spacing: 1.5px; }
-            .main-content { padding: 0 16px calc(120px + env(safe-area-inset-bottom)); }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .stat-card { padding: 16px 8px; }
-            .stat-card .value { font-size: 1.6rem; }
-            .stat-card .icon { font-size: 1.3rem; margin-bottom: 6px; }
-            .glass-card { padding: 20px; border-radius: 16px; margin-bottom: 20px; }
-            .today-section { padding: 24px 16px; }
-            .today-reading { font-size: 1.5rem; margin-bottom: 20px; }
-            .today-section h2 { font-size: 0.85rem; }
-            .today-badges { margin-bottom: 12px; }
-            .today-actions { flex-direction: column; gap: 10px; }
-            .today-actions .btn { width: 100%; justify-content: center; padding: 14px 20px; }
-            .progress-percentage { font-size: 1.5rem; }
-            .progress-stats { font-size: 0.65rem; gap: 8px; }
-            .timer-display { font-size: 3.5rem; margin: 24px 0; }
-            .timer-section { padding: 28px 16px; }
-            .timer-controls { gap: 16px; margin: 24px 0; }
-            .timer-btn { width: 60px; height: 60px; font-size: 1.5rem; }
-            .timer-passage-info { padding: 16px; margin: 16px 0; }
-            .timer-passage-title { font-size: 1.2rem; }
-            .timer-passage-meta { gap: 12px; font-size: 0.7rem; }
-            .timer-header h3 { font-size: 0.85rem; }
-            .timer-status { font-size: 0.65rem; padding: 5px 12px; }
-            .timer-additional-actions { gap: 10px; }
-            .timer-additional-actions .btn { padding: 10px 14px; font-size: 0.7rem; }
-            .timer-comparison { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px; margin-top: 20px !important; }
-            .timer-comparison-item .value { font-size: 1.1rem; }
-            .timer-comparison-item .label { font-size: 0.65rem; }
-            .tab-nav { width: calc(100% - 16px); padding: 6px; bottom: calc(12px + env(safe-area-inset-bottom)); border-radius: 28px; }
-            .tab-btn { font-size: 0.5rem; padding: 8px 0; min-width: 42px; gap: 3px; }
-            .tab-btn .tab-icon { font-size: 1.05rem; }
-            .floating-timer { bottom: calc(var(--bottom-nav-space, 80px) + 10px); left: 12px; right: 12px; min-width: auto; padding: 14px 16px; border-radius: 16px; }
-            .floating-timer-display { font-size: 1.6rem; }
-            .floating-timer-passage { font-size: 0.7rem; }
-            .reading-item { padding: 14px 12px; gap: 12px; }
-            .day-number { width: 38px; height: 38px; font-size: 0.8rem; }
-            .reading-passage { font-size: 0.95rem; }
-            .reading-meta { font-size: 0.65rem; gap: 10px; }
-            .checkbox { width: 28px; height: 28px; font-size: 0.85rem; }
-            .reading-actions .icon-btn { width: 32px !important; height: 32px !important; font-size: 0.8rem !important; }
-            .reading-controls { gap: 8px; margin-bottom: 16px; }
-            .filter-btn { padding: 8px 14px; font-size: 0.65rem; }
-            .book-block { padding: 5px 10px; font-size: 0.65rem; }
-            .bible-map { gap: 6px; padding: 12px; }
-            .heatmap-cell { width: 10px; height: 10px; }
-            .heatmap-wrapper { padding: 12px; }
-            .ach-card { padding: 16px; gap: 14px; }
-            .ach-icon { width: 48px; height: 48px; font-size: 1.6rem; }
-            .ach-details h4 { font-size: 1.05rem; }
-            .ach-details p { font-size: 0.7rem; }
-            .modal-content { padding: 32px 20px calc(32px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
-            .modal-title h2 { font-size: 2rem; }
-            .modal-close { top: 20px; right: 20px; width: 36px; height: 36px; font-size: 1rem; }
-            .plan-option { padding: 16px; }
-            .plan-option h4 { font-size: 1rem; }
-            .streak-banner { padding: 12px 16px; gap: 12px; border-radius: 10px; margin-bottom: 20px; }
-            .streak-info strong { font-size: 1rem; }
-            .streak-info p { font-size: 0.75rem; }
-            .streak-val { font-size: 1rem; }
-            .section-header { margin-bottom: 12px; margin-top: 8px; }
-            .section-header h3 { font-size: 1.2rem; }
-            .btn { padding: 11px 20px; font-size: 0.78rem; }
-            .btn-small { padding: 8px 14px; font-size: 0.68rem; }
-            .today-context { padding: 16px; font-size: 0.88rem; margin-bottom: 20px; }
-            .icon-btn { width: 40px; height: 40px; font-size: 1.1rem; }
-            .header-controls { gap: 6px; }
-            .bible-text-content { padding: 16px; font-size: 1rem; }
-        }
-
-        @media (max-width: 375px) {
-            .header-titles h1 { font-size: 1.5rem; }
-            .timer-display { font-size: 3rem; }
-            .today-reading { font-size: 1.3rem; }
-            .stat-card .value { font-size: 1.4rem; }
-            .tab-btn { min-width: 38px; font-size: 0.45rem; }
-            .tab-btn .tab-icon { font-size: 0.95rem; }
-            .timer-btn { width: 52px; height: 52px; font-size: 1.3rem; }
-        }
-
-        @media (max-height: 500px) and (orientation: landscape) {
-            .main-content { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
-            .tab-nav { bottom: calc(8px + env(safe-area-inset-bottom)); padding: 4px; }
-            .tab-btn { padding: 6px 0; }
-            .timer-display { font-size: 3rem; margin: 16px 0; }
-            .modal-content { max-height: 85vh; }
-        }
-
-
-
         /* ===== BIBLE READER — YouVersion-inspired ===== */
 
         /* Top Bar */
@@ -702,29 +598,6 @@
             min-height: 40vh; display: flex; align-items: center; justify-content: center;
         }
 
-        /* Responsive */
-        @media (max-width: 480px) {
-            .reader-topbar { padding: 4px 0 8px; gap: 6px; }
-            .reader-book-select select { padding: 8px 12px; font-size: 0.95rem; }
-            .version-chip { padding: 6px 10px; font-size: 0.62rem; }
-            .reader-settings-btn { width: 36px; height: 36px; font-size: 0.85rem; }
-            .reader-chapter-heading { padding: 20px 0 16px; }
-            .reader-chapter-num { font-size: 2.4rem; }
-            .reader-book-name { font-size: 0.65rem; letter-spacing: 3px; }
-            .bible-text-area { font-size: 1.15rem; line-height: 2.0; padding: 0 2px 36px; }
-            .bible-text-area > p:first-of-type::first-letter { font-size: 2.8em; }
-            .reader-settings-panel { padding: 14px; }
-            .reader-settings-row { flex-wrap: wrap; gap: 8px; padding: 10px 0; }
-            .reader-settings-label { min-width: 100%; }
-            .reader-font-option, .reader-version-option { padding: 7px 12px; font-size: 0.68rem; }
-            .reader-bottom-nav .btn { padding: 8px 14px; font-size: 0.7rem; }
-            .reader-nav-location { font-size: 0.8rem; }
-        }
-        @media (max-width: 375px) {
-            .bible-text-area { font-size: 1.05rem; line-height: 1.9; }
-            .reader-chapter-num { font-size: 2rem; }
-        }
-
         /* ===== READER SESSION BAR ===== */
         .reader-session-bar {
             position: sticky; top: 0; z-index: 50;
@@ -779,20 +652,8 @@
             font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; color: var(--success);
             animation: fadeIn 0.3s ease;
         }
-        @media (max-width: 480px) {
-            .reader-session-bar { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
-            .session-bar-left { gap: 8px; }
-            .session-bar-badge { font-size: 0.52rem; padding: 2px 8px; }
-            .session-bar-passage { font-size: 0.82rem; }
-            .session-bar-timer { font-size: 1.15rem; }
-            .session-ctrl { width: 34px; height: 34px; font-size: 0.75rem; }
-            .session-bar-controls { gap: 6px; }
-        }
 
         /* Chat Tab (full-screen tab container) */
-        #chat-tab {
-            /* Let chat tab fill available space */
-        }
         #chat-tab > .glass-card {
             margin-bottom: 0;
             height: 100%;
@@ -816,7 +677,7 @@
             flex: 1; overflow-y: auto; padding: 20px; display: flex;
             flex-direction: column; gap: 16px; background: var(--card-bg);
             border-left: 1px solid var(--card-brd); border-right: 1px solid var(--card-brd);
-            min-height: 0; /* critical for flex overflow */
+            min-height: 0;
         }
         #chat-tab .chat-tab-input-row {
             display: flex; gap: 8px; padding: 16px; background: var(--card-bg);
@@ -836,12 +697,242 @@
         }
         .clear-chat-btn:hover { transform: rotate(180deg); color: var(--danger); }
 
+        /* ===== Responsive Mobile Tweaks ===== */
+        @supports (padding: env(safe-area-inset-top)) {
+            .app-header { padding-top: calc(16px + env(safe-area-inset-top)); }
+        }
+
+        @media (max-width: 1024px) {
+            .app-header { max-width: 100%; padding-left: 20px; padding-right: 20px; }
+            .main-content { max-width: 100%; padding-left: 20px; padding-right: 20px; }
+        }
+
         @media (max-width: 480px) {
+            .app-header { padding: calc(12px + env(safe-area-inset-top)) 16px 12px; }
+            .header-titles h1 { font-size: 1.8rem; }
+            .header-titles .subtitle { font-size: 0.72rem; letter-spacing: 1.5px; }
+            .main-content { padding: 0 16px calc(120px + env(safe-area-inset-bottom)); }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-card { padding: 16px 8px; }
+            .stat-card .value { font-size: 1.6rem; }
+            .stat-card .icon { font-size: 1.3rem; margin-bottom: 6px; }
+            .glass-card { padding: 20px; border-radius: 16px; margin-bottom: 20px; }
+            .today-section { padding: 24px 16px; }
+            .today-reading { font-size: 1.5rem; margin-bottom: 20px; }
+            .today-section h2 { font-size: 0.85rem; }
+            .today-badges { margin-bottom: 12px; }
+            .today-actions { flex-direction: column; gap: 10px; }
+            .today-actions .btn { width: 100%; justify-content: center; padding: 14px 20px; }
+            .progress-percentage { font-size: 1.5rem; }
+            .progress-stats { font-size: 0.65rem; gap: 8px; }
+            .timer-display { font-size: 3.5rem; margin: 24px 0; }
+            .timer-section { padding: 28px 16px; }
+            .timer-controls { gap: 16px; margin: 24px 0; }
+            .timer-btn { width: 60px; height: 60px; font-size: 1.5rem; }
+            .timer-passage-info { padding: 16px; margin: 16px 0; }
+            .timer-passage-title { font-size: 1.2rem; }
+            .timer-passage-meta { gap: 12px; font-size: 0.7rem; }
+            .timer-header h3 { font-size: 0.85rem; }
+            .timer-status { font-size: 0.65rem; padding: 5px 12px; }
+            .timer-additional-actions { gap: 10px; }
+            .timer-additional-actions .btn { padding: 10px 14px; font-size: 0.7rem; }
+            .timer-comparison { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px; margin-top: 20px !important; }
+            .timer-comparison-item .value { font-size: 1.1rem; }
+            .timer-comparison-item .label { font-size: 0.65rem; }
+            .tab-nav { width: calc(100% - 16px); padding: 6px; bottom: calc(12px + env(safe-area-inset-bottom)); border-radius: 28px; }
+            .tab-btn { font-size: 0.5rem; padding: 8px 0; min-width: 42px; gap: 3px; }
+            .tab-btn .tab-icon { font-size: 1.05rem; }
+            .floating-timer { bottom: calc(var(--bottom-nav-space, 80px) + 10px); left: 12px; right: 12px; min-width: auto; padding: 14px 16px; border-radius: 16px; }
+            .floating-timer-display { font-size: 1.6rem; }
+            .floating-timer-passage { font-size: 0.7rem; }
+            .reading-item { padding: 14px 12px; gap: 12px; }
+            .day-number { width: 38px; height: 38px; font-size: 0.8rem; }
+            .reading-passage { font-size: 0.95rem; }
+            .reading-meta { font-size: 0.65rem; gap: 10px; }
+            .checkbox { width: 28px; height: 28px; font-size: 0.85rem; }
+            .reading-actions .icon-btn { width: 32px !important; height: 32px !important; font-size: 0.8rem !important; }
+            .reading-controls { gap: 8px; margin-bottom: 16px; }
+            .filter-btn { padding: 8px 14px; font-size: 0.65rem; }
+            .book-block { padding: 5px 10px; font-size: 0.65rem; }
+            .bible-map { gap: 6px; padding: 12px; }
+            .heatmap-cell { width: 10px; height: 10px; }
+            .heatmap-wrapper { padding: 12px; }
+            .ach-card { padding: 16px; gap: 14px; }
+            .ach-icon { width: 48px; height: 48px; font-size: 1.6rem; }
+            .ach-details h4 { font-size: 1.05rem; }
+            .ach-details p { font-size: 0.7rem; }
+            .modal-content { padding: 32px 20px calc(32px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
+            .modal-title h2 { font-size: 2rem; }
+            .modal-close { top: 20px; right: 20px; width: 36px; height: 36px; font-size: 1rem; }
+            .plan-option { padding: 16px; }
+            .plan-option h4 { font-size: 1rem; }
+            .streak-banner { padding: 12px 16px; gap: 12px; border-radius: 10px; margin-bottom: 20px; }
+            .streak-info strong { font-size: 1rem; }
+            .streak-info p { font-size: 0.75rem; }
+            .streak-val { font-size: 1rem; }
+            .section-header { margin-bottom: 12px; margin-top: 8px; }
+            .section-header h3 { font-size: 1.2rem; }
+            .btn { padding: 11px 20px; font-size: 0.78rem; }
+            .btn-small { padding: 8px 14px; font-size: 0.68rem; }
+            .today-context { padding: 16px; font-size: 0.88rem; margin-bottom: 20px; }
+            .icon-btn { width: 40px; height: 40px; font-size: 1.1rem; }
+            .header-controls { gap: 6px; }
+            .reader-topbar { padding: 4px 0 8px; gap: 6px; }
+            .reader-book-select select { padding: 8px 12px; font-size: 0.95rem; }
+            .version-chip { padding: 6px 10px; font-size: 0.62rem; }
+            .reader-settings-btn { width: 36px; height: 36px; font-size: 0.85rem; }
+            .reader-chapter-heading { padding: 20px 0 16px; }
+            .reader-chapter-num { font-size: 2.4rem; }
+            .reader-book-name { font-size: 0.65rem; letter-spacing: 3px; }
+            .bible-text-area { font-size: 1.15rem; line-height: 2.0; padding: 0 2px 36px; }
+            .bible-text-area > p:first-of-type::first-letter { font-size: 2.8em; }
+            .reader-settings-panel { padding: 14px; }
+            .reader-settings-row { flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+            .reader-settings-label { min-width: 100%; }
+            .reader-font-option, .reader-version-option { padding: 7px 12px; font-size: 0.68rem; }
+            .reader-bottom-nav .btn { padding: 8px 14px; font-size: 0.7rem; }
+            .reader-nav-location { font-size: 0.8rem; }
+            .reader-session-bar { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+            .session-bar-left { gap: 8px; }
+            .session-bar-badge { font-size: 0.52rem; padding: 2px 8px; }
+            .session-bar-passage { font-size: 0.82rem; }
+            .session-bar-timer { font-size: 1.15rem; }
+            .session-ctrl { width: 34px; height: 34px; font-size: 0.75rem; }
+            .session-bar-controls { gap: 6px; }
             #chat-tab .chat-tab-container { height: calc(100dvh - 100px - var(--bottom-nav-space, 80px)); }
             .chat-msg { font-size: 0.88rem; padding: 10px 14px; }
             #chat-tab .chat-tab-input-row { padding: 12px; }
             #chat-tab .chat-tab-input-row input { padding: 10px 14px; font-size: 0.9rem; }
         }
+
+        @media (max-width: 375px) {
+            .header-titles h1 { font-size: 1.5rem; }
+            .timer-display { font-size: 3rem; }
+            .today-reading { font-size: 1.3rem; }
+            .stat-card .value { font-size: 1.4rem; }
+            .tab-btn { min-width: 38px; font-size: 0.45rem; }
+            .tab-btn .tab-icon { font-size: 0.95rem; }
+            .timer-btn { width: 52px; height: 52px; font-size: 1.3rem; }
+            .bible-text-area { font-size: 1.05rem; line-height: 1.9; }
+            .reader-chapter-num { font-size: 2rem; }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main-content { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+            .tab-nav { bottom: calc(8px + env(safe-area-inset-bottom)); padding: 4px; }
+            .tab-btn { padding: 6px 0; }
+            .timer-display { font-size: 3rem; margin: 16px 0; }
+            .modal-content { max-height: 85vh; }
+        }
+
+        /* ===== DESKTOP LAYOUT OVERRIDES ===== */
+        [data-layout="desktop"] {
+            --bottom-nav-space: 40px;
+        }
+        
+        [data-layout="desktop"] body {
+            overflow-x: hidden;
+        }
+
+        [data-layout="desktop"] .tab-nav {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 240px; height: 100vh;
+            flex-direction: column;
+            justify-content: flex-start;
+            transform: none !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            border-radius: 0;
+            border-right: 1px solid var(--card-brd);
+            border-top: none; border-bottom: none; border-left: none;
+            padding: 40px 16px;
+            z-index: 1000;
+            max-width: none;
+            background: var(--card-bg);
+            transition: all 0.3s ease;
+        }
+        
+        [data-layout="desktop"] .tab-btn {
+            flex: 0 0 auto;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 16px 20px;
+            font-size: 0.95rem;
+            border-radius: var(--rad-sm);
+            margin-bottom: 8px;
+            min-width: 0;
+        }
+        
+        [data-layout="desktop"] .tab-btn .tab-icon {
+            margin-bottom: 0; margin-right: 16px; font-size: 1.4rem;
+        }
+        
+        [data-layout="desktop"] .app-header {
+            padding-left: calc(240px + 32px);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        [data-layout="desktop"] .main-content {
+            padding-left: calc(240px + 32px);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 60px;
+        }
+        
+        [data-layout="desktop"] .nav-pull-tab { display: none; }
+        
+        /* Reader adjustments for desktop */
+        [data-layout="desktop"] #bible-reader .bible-text-area,
+        [data-layout="desktop"] .reader-chapter-heading,
+        [data-layout="desktop"] .reader-bottom-nav,
+        [data-layout="desktop"] .reader-session-bar {
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        [data-layout="desktop"] .bible-text-area {
+            padding-left: 20px; padding-right: 20px;
+        }
+
+        /* Stat grids */
+        [data-layout="desktop"] .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        
+        /* Modals */
+        [data-layout="desktop"] .modal-overlay { align-items: center; padding: 40px; }
+        [data-layout="desktop"] .modal-content {
+            border-radius: 24px;
+            max-height: 85vh;
+            height: auto;
+            animation: fadeInDesktopModal 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
+            padding-bottom: 40px;
+        }
+        
+        @keyframes fadeInDesktopModal {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Floating timer */
+        [data-layout="desktop"] .floating-timer {
+            bottom: 40px;
+            left: auto; right: 40px;
+            transform: none !important;
+            opacity: 1;
+        }
+        [data-layout="desktop"] .floating-timer.nav-hidden-adjust {
+            transform: none;
+        }
+        
+        /* Chat container */
+        [data-layout="desktop"] #chat-tab .chat-tab-container {
+            height: calc(100vh - 180px);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
     </style>
 </head>
 <body>
@@ -851,6 +942,7 @@
             <p class="subtitle">Read · Reflect · Grow</p>
         </div>
         <div class="header-controls">
+            <button class="icon-btn" onclick="toggleLayout()" id="layoutToggleBtn" title="Toggle Desktop/Mobile Layout">💻</button>
             <button class="icon-btn" onclick="toggleFullScreen()" id="fullscreenBtn" title="Toggle Fullscreen">⤢</button>
             <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Theme">🌙</button>
             <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
@@ -1205,7 +1297,7 @@
     <div class="floating-timer" id="floatingTimer">
         <div class="floating-timer-header">
             <span class="timer-status running" id="floatingTimerStatus" style="font-size:0.65rem;">Reading</span>
-            <button class="chat-close" style="font-size:1.2rem;" onclick="hideFloatingTimer()">×</button>
+            <button class="chat-close" style="font-size:1.2rem; background:none; border:none; cursor:pointer; color:var(--txt);" onclick="hideFloatingTimer()">×</button>
         </div>
         <div class="floating-timer-display" id="floatingTimerDisplay">00:00:00</div>
         <div class="floating-timer-passage" id="floatingTimerPassage">Genesis 1-3</div>
@@ -1229,6 +1321,10 @@
                 <div class="setting-item">
                     <div class="setting-label"><span>Light Mode</span></div>
                     <div class="toggle" id="themeToggle" onclick="toggleTheme()"></div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label"><span>Desktop Layout</span></div>
+                    <div class="toggle" id="layoutToggleSetting" onclick="toggleLayout()"></div>
                 </div>
                 <div class="setting-item">
                     <div class="setting-label"><span>Font Size</span></div>
@@ -1401,7 +1497,7 @@
 
     let state = {
         startDate: null, planType: 'oneyear', readingPlan: [], sessions: [],
-        settings: { theme: 'light', fontSize: 'normal', showFloatingTimer: true, readingSpeed: 'normal' },
+        settings: { theme: 'light', layout: 'auto', fontSize: 'normal', showFloatingTimer: true, readingSpeed: 'normal' },
         stats: { timerSessions: 0, fasterSessions: 0 }
     };
     let timerState = { isActive: false, isRunning: false, dayNum: null, passage: null, chapters: null, startedAt: null, pausedAt: null, accumulatedMs: 0 };
@@ -1412,10 +1508,7 @@
     let selectedHighlightText = '';
     let tabScrollPositions = {};
 
-    // ===== MULTI-VERSE SELECTION (New Feature) =====
     let selectedVerses = new Set();
-
-    // ===== VOICE-TO-TEXT GLOBALS =====
     let mediaRecorder;
     let audioChunks = [];
     let isRecording = false;
@@ -1424,7 +1517,6 @@
     function toggleFullScreen() {
         const doc = window.document;
         const docEl = doc.documentElement;
-
         const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
         const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
@@ -1434,16 +1526,13 @@
                     alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
                 });
             } else {
-                alert("Fullscreen API is not supported on this browser (e.g., iOS Safari). Please use 'Add to Home Screen' to launch fullscreen.");
+                alert("Fullscreen API is not supported on this browser.");
             }
         } else {
-            if (cancelFullScreen) {
-                cancelFullScreen.call(doc);
-            }
+            if (cancelFullScreen) cancelFullScreen.call(doc);
         }
     }
 
-    // Update Fullscreen Icon automatically
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
     document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
     document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
@@ -1458,7 +1547,6 @@
 
 
     // ===== READ NOW INTEGRATION =====
-
     function parsePassageForReader(passageStr) {
         const firstPassage = passageStr.split(',')[0].trim();
         const match = firstPassage.match(/^(.+?)\s+(\d+)(?:\s*-\s*(\d+))?$/);
@@ -1576,40 +1664,38 @@
         return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
     }
 
-    // ===== TAB NAV SWIPE TO HIDE/SHOW =====
+    // ===== TAB NAV SWIPE TO HIDE/SHOW (Mobile Only) =====
     (function initNavSwipe() {
         let touchStartY = 0;
         let touchStartX = 0;
         let navVisible = true;
 
         function updateNavSpaceVar(visible) {
+            if (document.documentElement.getAttribute('data-layout') === 'desktop') return;
             if (visible) {
-                document.documentElement.style.setProperty('--bottom-nav-space',
-                    'calc(90px + env(safe-area-inset-bottom))');
+                document.documentElement.style.setProperty('--bottom-nav-space', 'calc(90px + env(safe-area-inset-bottom))');
             } else {
                 document.documentElement.style.setProperty('--bottom-nav-space', '20px');
             }
         }
 
         function hideTabNav() {
+            if (document.documentElement.getAttribute('data-layout') === 'desktop') return;
             const nav = document.querySelector('.tab-nav');
-            const handle = document.getElementById('navPeekHandle');
             const pullTab = document.getElementById('navPullTab');
             if (!nav) return;
             nav.classList.add('nav-hidden');
-            if (handle) handle.classList.add('visible');
             if (pullTab) pullTab.classList.add('visible');
             navVisible = false;
             updateNavSpaceVar(false);
         }
 
         window.showTabNav = function() {
+            if (document.documentElement.getAttribute('data-layout') === 'desktop') return;
             const nav = document.querySelector('.tab-nav');
-            const handle = document.getElementById('navPeekHandle');
             const pullTab = document.getElementById('navPullTab');
             if (!nav) return;
             nav.classList.remove('nav-hidden');
-            if (handle) handle.classList.remove('visible');
             if (pullTab) pullTab.classList.remove('visible');
             navVisible = true;
             updateNavSpaceVar(true);
@@ -1623,36 +1709,31 @@
         }, { passive: true });
 
         document.addEventListener('touchend', function(e) {
+            if (document.documentElement.getAttribute('data-layout') === 'desktop') return;
             const deltaY = e.changedTouches[0].clientY - touchStartY;
             const deltaX = e.changedTouches[0].clientX - touchStartX;
             if (Math.abs(deltaX) > Math.abs(deltaY) * 0.8) return;
             if (Math.abs(deltaY) < 40) return;
-            if (deltaY > 0 && navVisible) {
-                hideTabNav();
-            } else if (deltaY < 0 && !navVisible) {
-                showTabNav();
-            }
+            if (deltaY > 0 && navVisible) { hideTabNav(); } 
+            else if (deltaY < 0 && !navVisible) { showTabNav(); }
         }, { passive: true });
     })();
 
-    // ===== NAV TOGGLE (bottom-edge tap) =====
+    // ===== NAV TOGGLE (bottom-edge tap - Mobile Only) =====
     function initNavToggle() {
         const nav = document.getElementById('tabNav') || document.querySelector('.tab-nav');
         const pullTab = document.getElementById('navPullTab');
         if (!nav) return;
         const EDGE_ZONE = 30;
         document.addEventListener('touchstart', (e) => {
+            if (document.documentElement.getAttribute('data-layout') === 'desktop') return;
             const touchY = e.touches[0].clientY;
             if (touchY > window.innerHeight - EDGE_ZONE) {
                 const wasHidden = nav.classList.contains('nav-hidden');
                 nav.classList.toggle('nav-hidden');
                 if (pullTab) pullTab.classList.toggle('visible', nav.classList.contains('nav-hidden'));
-                if (wasHidden) {
-                    document.documentElement.style.setProperty('--bottom-nav-space',
-                        'calc(90px + env(safe-area-inset-bottom))');
-                } else {
-                    document.documentElement.style.setProperty('--bottom-nav-space', '20px');
-                }
+                if (wasHidden) { document.documentElement.style.setProperty('--bottom-nav-space', 'calc(90px + env(safe-area-inset-bottom))'); } 
+                else { document.documentElement.style.setProperty('--bottom-nav-space', '20px'); }
             }
         }, { passive: true });
     }
@@ -1674,6 +1755,7 @@
             const parsed = JSON.parse(saved);
             state = { ...state, ...parsed };
             if (state.settings && !['light','dark'].includes(state.settings.theme)) state.settings.theme = 'light';
+            if (state.settings && !state.settings.layout) state.settings.layout = 'auto';
             if (state.startDate) state.startDate = new Date(state.startDate);
             if (!state.sessions) state.sessions = [];
             if (!state.stats) state.stats = { timerSessions: 0, fasterSessions: 0 };
@@ -1732,8 +1814,6 @@
         const chapter = document.getElementById('bibleChapterSelect').value;
 
         if (!bookName || !chapter) return;
-
-        // Clear any prior selections cleanly
         clearVerseSelection();
 
         const textArea = document.getElementById('bibleTextArea');
@@ -1753,12 +1833,8 @@
                 let errorHtml = `<div class="bible-loading" style="flex-direction:column; gap:16px; text-align:center; padding:20px;">
                     <p style="color:var(--danger); font-family:var(--font-sans); font-size:0.9rem;">⚠️ ${data.error}</p>`;
 
-                if (data.hint) {
-                    errorHtml += `<p style="color:var(--txt2); font-family:var(--font-sans); font-size:0.8rem;">${data.hint}</p>`;
-                }
-                if (data.setupUrl) {
-                    errorHtml += `<a href="${data.setupUrl}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Get API Key</a>`;
-                }
+                if (data.hint) errorHtml += `<p style="color:var(--txt2); font-family:var(--font-sans); font-size:0.8rem;">${data.hint}</p>`;
+                if (data.setupUrl) errorHtml += `<a href="${data.setupUrl}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Get API Key</a>`;
 
                 if (currentBibleVersion !== 'WEB' && currentBibleVersion !== 'KJV') {
                     errorHtml += `<div style="margin-top:8px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
@@ -1767,40 +1843,26 @@
                     </div>`;
                 }
 
-                errorHtml += `<button class="btn btn-primary btn-small" style="margin-top:8px;" onclick="loadBibleChapter()">Retry ${currentBibleVersion}</button>`;
-                errorHtml += `</div>`;
-
-                textArea.innerHTML = errorHtml;
-                return;
+                errorHtml += `<button class="btn btn-primary btn-small" style="margin-top:8px;" onclick="loadBibleChapter()">Retry ${currentBibleVersion}</button></div>`;
+                textArea.innerHTML = errorHtml; return;
             }
 
             let content = data.content || '';
-
-            // 1. Convert API.Bible verse spans to distinct marker `||V:X||`
             content = content.replace(/<span[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g, '||V:$1||');
-            // 2. Strip all other spans to normalize the structure
             content = content.replace(/<\/?span[^>]*>/g, '');
             
-            // 3. Process paragraphs and wrap verses properly into `.verse-wrapper` spans
             let output = '';
             let parts = content.split(/(<\/?p[^>]*>)/i); 
             let currentVerse = null;
             
             for (let part of parts) {
-                if (/^<\/?p/i.test(part)) {
-                    output += part;
-                } else {
+                if (/^<\/?p/i.test(part)) { output += part; } 
+                else {
                     let vParts = part.split(/\|\|V:(\d+)\|\|/);
-                    
                     if (vParts[0].trim().length > 0) {
-                        if (currentVerse) {
-                            output += `<span class="verse-wrapper" data-verse="${currentVerse}" onclick="toggleVerseSelection(this, event)">${vParts[0]}</span>`;
-                        } else {
-                            output += vParts[0];
-                        }
-                    } else {
-                        output += vParts[0];
-                    }
+                        if (currentVerse) output += `<span class="verse-wrapper" data-verse="${currentVerse}" onclick="toggleVerseSelection(this, event)">${vParts[0]}</span>`;
+                        else output += vParts[0];
+                    } else { output += vParts[0]; }
                     
                     for (let i = 1; i < vParts.length; i += 2) {
                         currentVerse = vParts[i];
@@ -1809,13 +1871,11 @@
                     }
                 }
             }
-            
-            // Normalize spaces/newlines
             content = output.replace(/\n{3,}/g, '\n\n');
 
             textArea.classList.remove('loading');
             textArea.innerHTML = content || '<p style="color:var(--txt2)">No content available for this chapter.</p>';
-            void textArea.offsetWidth; // force reflow for animation restart
+            void textArea.offsetWidth;
             textArea.classList.add('loaded');
             setTimeout(() => textArea.classList.remove('loaded'), 600);
             textArea.scrollTop = 0;
@@ -1835,13 +1895,8 @@
 
             if (copyright) {
                 let copyrightText = data.copyright || '';
-                if (data.source === 'bible-api.com (free)') {
-                    copyrightText += ' · Using free API (no key required)';
-                }
-                if (copyrightText) {
-                    copyright.textContent = copyrightText;
-                    copyright.style.display = 'block';
-                }
+                if (data.source === 'bible-api.com (free)') copyrightText += ' · Using free API (no key required)';
+                if (copyrightText) { copyright.textContent = copyrightText; copyright.style.display = 'block'; }
             }
 
         } catch (err) {
@@ -1852,22 +1907,15 @@
                 <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
                     <button class="btn btn-secondary btn-small" onclick="loadBibleChapter()">Retry</button>
                     <button class="btn btn-secondary btn-small" onclick="switchBibleVersion('KJV'); loadBibleChapter()">Try KJV (free)</button>
-                </div>
-            </div>`;
+                </div></div>`;
         }
     }
 
     function switchBibleVersion(version) {
         currentBibleVersion = version;
-        document.querySelectorAll('.reader-version-option').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.version === version);
-        });
-        document.querySelectorAll('.version-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.version === version);
-        });
+        document.querySelectorAll('.reader-version-option').forEach(btn => btn.classList.toggle('active', btn.dataset.version === version));
         const chip = document.getElementById('versionChip');
         if (chip) chip.textContent = version;
-
         const bookName = document.getElementById('bibleBookSelect').value;
         const chapter = document.getElementById('bibleChapterSelect').value;
         if (bookName && chapter) loadBibleChapter();
@@ -1877,11 +1925,8 @@
         const chSelect = document.getElementById('bibleChapterSelect');
         const bookSelect = document.getElementById('bibleBookSelect');
         let ch = parseInt(chSelect.value);
-
-        if (ch > 1) {
-            chSelect.value = ch - 1;
-            loadBibleChapter();
-        } else {
+        if (ch > 1) { chSelect.value = ch - 1; loadBibleChapter(); } 
+        else {
             const bookName = bookSelect.value;
             const idx = bibleBooks.findIndex(b => b.name === bookName);
             if (idx > 0) {
@@ -1902,10 +1947,8 @@
         const book = bibleBooks.find(b => b.name === bookName);
         if (!book) return;
 
-        if (ch < book.chapters) {
-            chSelect.value = ch + 1;
-            loadBibleChapter();
-        } else {
+        if (ch < book.chapters) { chSelect.value = ch + 1; loadBibleChapter(); } 
+        else {
             const idx = bibleBooks.findIndex(b => b.name === bookName);
             if (idx < bibleBooks.length - 1) {
                 const nextBook = bibleBooks[idx + 1];
@@ -1943,26 +1986,16 @@
     }
 
     // ===== MULTI-VERSE SELECTION AND ASK AI =====
-
     window.toggleVerseSelection = function(element, event) {
-        // Prevent toggling if user is native-selecting text
         const selection = window.getSelection();
-        if (selection && selection.toString().trim().length > 0) {
-            return; 
-        }
+        if (selection && selection.toString().trim().length > 0) return; 
 
         const verseNum = element.dataset.verse;
         const allParts = document.querySelectorAll(`.verse-wrapper[data-verse="${verseNum}"]`);
         let isSelecting = !element.classList.contains('selected');
         
-        if (isSelecting) {
-            selectedVerses.add(verseNum);
-            allParts.forEach(el => el.classList.add('selected'));
-        } else {
-            selectedVerses.delete(verseNum);
-            allParts.forEach(el => el.classList.remove('selected'));
-        }
-        
+        if (isSelecting) { selectedVerses.add(verseNum); allParts.forEach(el => el.classList.add('selected')); } 
+        else { selectedVerses.delete(verseNum); allParts.forEach(el => el.classList.remove('selected')); }
         updateAskAITooltip(element);
     };
 
@@ -1976,14 +2009,10 @@
                 tooltip.style.left = left + 'px';
                 tooltip.style.top = top + 'px';
             }
-            
             let vArray = Array.from(selectedVerses).map(Number).sort((a,b)=>a-b);
             let text = vArray.length === 1 ? `Ask AI (v${vArray[0]}) 💬` : `Ask AI (${vArray.length} verses) 💬`;
-            tooltip.textContent = text;
-            tooltip.classList.add('show');
-        } else {
-            tooltip.classList.remove('show');
-        }
+            tooltip.textContent = text; tooltip.classList.add('show');
+        } else { tooltip.classList.remove('show'); }
     };
 
     window.clearVerseSelection = function() {
@@ -1995,18 +2024,10 @@
 
     function formatVerseRanges(arr) {
         if (!arr.length) return '';
-        let ranges = [];
-        let start = arr[0];
-        let end = arr[0];
-        
+        let ranges = []; let start = arr[0], end = arr[0];
         for (let i = 1; i < arr.length; i++) {
-            if (arr[i] === end + 1) {
-                end = arr[i];
-            } else {
-                ranges.push(start === end ? `${start}` : `${start}-${end}`);
-                start = arr[i];
-                end = arr[i];
-            }
+            if (arr[i] === end + 1) { end = arr[i]; } 
+            else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = arr[i]; end = arr[i]; }
         }
         ranges.push(start === end ? `${start}` : `${start}-${end}`);
         return ranges.join(',');
@@ -2015,18 +2036,12 @@
     function initHighlightToAsk() {
         document.addEventListener('mouseup', handleTextSelection);
         document.addEventListener('touchend', handleTextSelection);
-        
-        // Listen for clicks outside of verses to dismiss selection
         document.addEventListener('mousedown', (e) => {
             const tooltip = document.getElementById('askAiTooltip');
             const textArea = document.getElementById('bibleTextArea');
-            
             if (!tooltip.contains(e.target)) {
-                if (textArea && textArea.contains(e.target) && !e.target.closest('.verse-wrapper')) {
-                    clearVerseSelection();
-                } else if (!textArea || !textArea.contains(e.target)) {
-                    clearVerseSelection();
-                }
+                if (textArea && textArea.contains(e.target) && !e.target.closest('.verse-wrapper')) clearVerseSelection();
+                else if (!textArea || !textArea.contains(e.target)) clearVerseSelection();
             }
         });
     }
@@ -2034,8 +2049,6 @@
     function handleTextSelection(e) {
         const bibleContent = document.getElementById('bibleTextArea');
         if (!bibleContent) return;
-
-        // Skip native selection tooltip if verses are clicked directly
         if (selectedVerses.size > 0) return;
 
         const selection = window.getSelection();
@@ -2050,10 +2063,8 @@
             const left = Math.min(rect.left + rect.width / 2 - 50, window.innerWidth - 130);
             const top = Math.max(10, rect.top - 45);
 
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-            tooltip.textContent = 'Ask AI 💬';
-            tooltip.classList.add('show');
+            tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
+            tooltip.textContent = 'Ask AI 💬'; tooltip.classList.add('show');
         }
     }
 
@@ -2082,12 +2093,10 @@
             });
             
             const passageText = extractedTexts.join(' ');
-            
             const chatInput = document.getElementById('chatInput');
             chatInput.value = `Explain ${verseRef}: "${passageText}"`;
             switchTab('chat-tab');
             setTimeout(() => chatInput.focus(), 300);
-            
             clearVerseSelection();
         } else if (selectedHighlightText) {
             const chatInput = document.getElementById('chatInput');
@@ -2109,69 +2118,40 @@
         const targetInput = document.getElementById(targetId);
 
         if (isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-            btn.textContent = '⏳';
-            btn.style.animation = 'spin 1s linear infinite';
-            return;
+            mediaRecorder.stop(); isRecording = false;
+            btn.textContent = '⏳'; btn.style.animation = 'spin 1s linear infinite'; return;
         }
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
-
-            mediaRecorder.ondataavailable = event => {
-                if (event.data.size > 0) audioChunks.push(event.data);
-            };
-
+            mediaRecorder.ondataavailable = event => { if (event.data.size > 0) audioChunks.push(event.data); };
             mediaRecorder.onstop = async () => {
                 const audioMimeType = mediaRecorder.mimeType;
                 const audioBlob = new Blob(audioChunks, { type: audioMimeType });
-
                 const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = async () => {
                     const base64Audio = reader.result.split(',')[1];
-
                     try {
                         const response = await fetch('/api/transcribe', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ audio: base64Audio, mimeType: audioMimeType })
                         });
-
                         if (!response.ok) throw new Error('Transcription failed');
                         const data = await response.json();
-
                         const currentText = targetInput.value;
                         const spacer = (currentText === '') ? '' : ' ';
                         targetInput.value = currentText + spacer + data.text;
-                    } catch (error) {
-                        console.error('Transcription API Error:', error);
-                        alert('Failed to transcribe audio.');
-                    } finally {
-                        btn.textContent = '🎙️';
-                        btn.style.animation = '';
-                        btn.style.color = '';
-                        btn.style.backgroundColor = 'transparent';
-                    }
+                    } catch (error) { console.error('Transcription API Error:', error); alert('Failed to transcribe audio.'); } 
+                    finally { btn.textContent = '🎙️'; btn.style.animation = ''; btn.style.color = ''; btn.style.backgroundColor = 'transparent'; }
                 };
-
                 stream.getTracks().forEach(track => track.stop());
             };
-
-            mediaRecorder.start();
-            isRecording = true;
-            btn.textContent = '⏹️';
-            btn.style.color = 'white';
-            btn.style.backgroundColor = 'var(--danger)';
-            btn.style.borderRadius = '50%';
-
-        } catch (err) {
-            console.error("Microphone access denied:", err);
-            alert('Microphone access is required to use dictation.');
-        }
+            mediaRecorder.start(); isRecording = true;
+            btn.textContent = '⏹️'; btn.style.color = 'white'; btn.style.backgroundColor = 'var(--danger)'; btn.style.borderRadius = '50%';
+        } catch (err) { console.error("Microphone access denied:", err); alert('Microphone access is required to use dictation.'); }
     }
 
     // ===== AI FEATURES =====
@@ -2179,8 +2159,7 @@
     function formatAIResponse(text) { return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
 
     async function fetchAIContext() {
-        const today = getCurrentDay(); const plan = state.readingPlan[today - 1];
-        if (!plan) return;
+        const today = getCurrentDay(); const plan = state.readingPlan[today - 1]; if (!plan) return;
         const contextBox = document.getElementById('todayContext');
         contextBox.innerHTML = '<span class="loading-dots">Thinking</span>'; contextBox.classList.add('show');
         try {
@@ -2267,16 +2246,14 @@
         if (state.settings.showFloatingTimer) showFloatingTimer();
     }
     function pauseTimerFromFloat() {
-        pauseTimer();
-        updateFloatingTimerUI();
+        pauseTimer(); updateFloatingTimerUI();
         const alertPause = document.getElementById('alertPauseBtn');
         const alertResume = document.getElementById('alertResumeBtn');
         if (alertPause) alertPause.style.display = 'none';
         if (alertResume) alertResume.style.display = '';
     }
     function resumeTimerFromFloat() {
-        resumeTimer();
-        updateFloatingTimerUI();
+        resumeTimer(); updateFloatingTimerUI();
         const alertPause = document.getElementById('alertPauseBtn');
         const alertResume = document.getElementById('alertResumeBtn');
         if (alertPause) alertPause.style.display = '';
@@ -2601,9 +2578,7 @@
 
     function switchTab(tabId) {
         const currentActiveTab = document.querySelector('.tab-panel.active');
-        if (currentActiveTab) {
-            tabScrollPositions[currentActiveTab.id] = window.scrollY;
-        }
+        if (currentActiveTab) tabScrollPositions[currentActiveTab.id] = window.scrollY;
 
         document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
@@ -2615,25 +2590,43 @@
         if (tabId === 'bible-reader') updateReaderSessionBar();
 
         if (tabScrollPositions[tabId] !== undefined) {
-            requestAnimationFrame(() => {
-                window.scrollTo(0, tabScrollPositions[tabId]);
-            });
-        } else {
-            window.scrollTo(0, 0);
-        }
+            requestAnimationFrame(() => window.scrollTo(0, tabScrollPositions[tabId]));
+        } else { window.scrollTo(0, 0); }
     }
 
     function setFilter(filter) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector(`[data-filter="${filter}"]`).classList.add('active'); renderReadings(); }
     function filterReadings() { renderReadings(); }
 
-    // ===== SETTINGS =====
+    // ===== SETTINGS & LAYOUT =====
     function applySettings() {
         const isLight = state.settings.theme === 'light';
         document.documentElement.setAttribute('data-theme', state.settings.theme);
+        
+        // Layout Logic
+        let activeLayout = state.settings.layout;
+        if (activeLayout === 'auto') activeLayout = window.innerWidth > 1024 ? 'desktop' : 'mobile';
+        document.documentElement.setAttribute('data-layout', activeLayout);
+        
+        const layoutBtn = document.getElementById('layoutToggleBtn'); 
+        if (layoutBtn) {
+            layoutBtn.textContent = activeLayout === 'desktop' ? '📱' : '💻';
+            layoutBtn.title = activeLayout === 'desktop' ? 'Switch to Mobile Layout' : 'Switch to Desktop Layout';
+        }
+        
+        const layoutSetting = document.getElementById('layoutToggleSetting'); 
+        if (layoutSetting) layoutSetting.classList.toggle('active', activeLayout === 'desktop');
+
         const themeBtn = document.getElementById('themeToggleBtn'); if (themeBtn) themeBtn.textContent = isLight ? '🌙' : '☀️';
         const modalToggle = document.getElementById('themeToggle'); if (modalToggle) modalToggle.classList.toggle('active', isLight);
         const sizes = { small: '14px', normal: '16px', large: '18px' }; document.body.style.fontSize = sizes[state.settings.fontSize] || '16px';
         const floatingToggle = document.getElementById('floatingTimerToggle'); if (floatingToggle) floatingToggle.classList.toggle('active', state.settings.showFloatingTimer);
+    }
+
+    function toggleLayout() {
+        let current = document.documentElement.getAttribute('data-layout');
+        state.settings.layout = current === 'desktop' ? 'mobile' : 'desktop';
+        saveState(); applySettings();
+        window.dispatchEvent(new Event('resize')); 
     }
 
     function toggleTheme() { state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light'; saveState(); applySettings(); }
@@ -2709,25 +2702,18 @@
         reader.onload = function(e) {
             try {
                 const importedData = JSON.parse(e.target.result);
-                if (!importedData.state) {
-                    alert("Invalid backup file format.");
-                    return;
-                }
+                if (!importedData.state) { alert("Invalid backup file format."); return; }
 
                 const importedState = importedData.state;
-
-                // 1. If current device has no active plan, just load everything
                 if (!state.startDate && importedState.startDate) {
                     state = { ...state, ...importedState };
                     if (state.startDate) state.startDate = new Date(state.startDate);
                 } else {
-                    // 2. Merge Sessions (Deduplicate by unique ID/timestamp)
                     const existingSessionIds = new Set((state.sessions || []).map(s => s.id));
                     const newSessions = (importedState.sessions || []).filter(s => !existingSessionIds.has(s.id));
                     state.sessions = [...(state.sessions || []), ...newSessions].sort((a, b) => a.id - b.id);
                     state.stats.timerSessions = state.sessions.length;
 
-                    // Recalculate "faster" sessions based on merged array
                     let fasterCount = 0;
                     state.sessions.forEach(s => {
                         const estMs = getEstimatedReadingTime(s.chapters) * 60000;
@@ -2735,43 +2721,22 @@
                     });
                     state.stats.fasterSessions = fasterCount;
 
-                    // 3. Merge Reading Plan Checkmarks
                     if (state.planType === importedState.planType && state.readingPlan && importedState.readingPlan) {
                         const len = Math.min(state.readingPlan.length, importedState.readingPlan.length);
                         for (let i = 0; i < len; i++) {
                             const currentDay = state.readingPlan[i];
                             const importedDay = importedState.readingPlan[i];
-
-                            // Add checkmark if it was completed on the other device
-                            if (importedDay.completed && !currentDay.completed) {
-                                currentDay.completed = true;
-                                currentDay.completedAt = importedDay.completedAt;
-                            }
-                            
-                            // Merge time (Use max to avoid runaway duplicate compounding if re-imported)
+                            if (importedDay.completed && !currentDay.completed) { currentDay.completed = true; currentDay.completedAt = importedDay.completedAt; }
                             currentDay.totalReadingTimeMs = Math.max(currentDay.totalReadingTimeMs || 0, importedDay.totalReadingTimeMs || 0);
-                            
-                            // Merge AI Context if missing on this device
-                            if (!currentDay.aiContext && importedDay.aiContext) {
-                                currentDay.aiContext = importedDay.aiContext;
-                            }
+                            if (!currentDay.aiContext && importedDay.aiContext) { currentDay.aiContext = importedDay.aiContext; }
                         }
-                    } else {
-                        alert("The imported file uses a different reading plan. Timer sessions were merged, but daily checkmarks could not be combined.");
-                    }
+                    } else { alert("The imported file uses a different reading plan. Timer sessions were merged, but daily checkmarks could not be combined."); }
                 }
 
-                saveState();
-                renderAll();
-                alert("✅ Data merged successfully!");
-            } catch (err) {
-                console.error("Import Error:", err);
-                alert("Error parsing the backup file. Ensure it is a valid JSON export.");
-            }
+                saveState(); renderAll(); alert("✅ Data merged successfully!");
+            } catch (err) { console.error("Import Error:", err); alert("Error parsing the backup file. Ensure it is a valid JSON export."); }
         };
         reader.readAsText(file);
-        
-        // Reset input to allow re-selection of the same file later
         event.target.value = "";
     }
 
