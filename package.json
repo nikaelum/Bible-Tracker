@@ -1,12 +1,11 @@
 {
-  "name": "bible-reading-tracker",
+  "name": "devotional-tracker",
   "version": "1.0.0",
-  "type": "module",
-  "engines": {
-    "node": "24.x"
-  },
   "dependencies": {
-    "@google/genai": "^0.1.2",
-    "dotenv": "^16.4.5"
+    "@google/generative-ai": "^0.21.0",
+    "@google/genai": "^1.45.0"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
