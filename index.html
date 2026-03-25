@@ -443,11 +443,26 @@
         }
         .reel-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.6; }
         .reel-verse-text {
-            font-family: var(--font-serif); font-size: 1.6rem; color: #fff;
-            text-align: center; line-height: 2; z-index: 1;
-            text-shadow: 0 2px 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.3);
-            max-width: 90%; animation: verseFadeIn 0.6s ease;
-            -webkit-user-select: text; user-select: text;
+            font-family: var(--font-serif); font-size: 1.15rem; color: #fff;
+            text-align: left; line-height: 1.85; z-index: 1;
+            text-shadow: 0 1px 15px rgba(0,0,0,0.8), 0 0 30px rgba(0,0,0,0.3);
+            max-width: 92%; width: 92%; animation: verseFadeIn 0.6s ease;
+            -webkit-user-select: none; user-select: none;
+        }
+        .reel-verse-line {
+            display: inline; padding: 2px 0; border-radius: 4px;
+            cursor: pointer; transition: background 0.25s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .reel-verse-line:active { background: rgba(255,255,255,0.12); }
+        .reel-verse-line.reel-verse-selected {
+            background: rgba(199,166,255,0.3);
+            border-bottom: 2px solid rgba(255,255,255,0.6);
+        }
+        .reel-v-num {
+            font-size: 0.5em; vertical-align: super; opacity: 0.45;
+            margin-right: 3px; margin-left: 2px; font-family: var(--font-sans);
+            font-weight: 700; line-height: 0; user-select: none;
         }
         .reel-reference {
             position: absolute; bottom: 140px; left: 24px; right: 100px;
@@ -543,7 +558,7 @@
             .tab-nav { width: calc(100% - 16px); padding: 6px; bottom: calc(12px + env(safe-area-inset-bottom)); border-radius: 28px; }
             .tab-btn { font-size: 0.45rem; padding: 8px 0; min-width: 38px; gap: 3px; }
             .tab-btn .tab-icon { font-size: 1rem; }
-            .reel-verse-text { font-size: 1.3rem; line-height: 1.8; }
+            .reel-verse-text { font-size: 1rem; line-height: 1.75; }
             .chat-input-area { padding-bottom: calc(var(--bottom-nav-space, 80px) + 4px); }
         }
         @media (max-width: 375px) {
@@ -551,7 +566,7 @@
             .timer-display { font-size: 3rem; }
             .tab-btn { min-width: 34px; font-size: 0.42rem; }
             .tab-btn .tab-icon { font-size: 0.9rem; }
-            .reel-verse-text { font-size: 1.1rem; }
+            .reel-verse-text { font-size: 0.92rem; }
         }
 
         /* Desktop */
@@ -1144,7 +1159,7 @@
     // - Plan switching with independent progress
     // - Freestyle reading mode
     // - Pause days feature
-    // - Scripture Reels tab
+    // - Scripture Reels tab (More text per slide + per-verse Ask AI)
     // - Updated stats (Oracle Asks, Sacred Hours, Scrolls Viewed, Marathon)
     // - Reader auto-resume (persisted to localStorage)
     // - Bug fixes
@@ -1235,9 +1250,11 @@
     let mediaRecorder, audioChunks = [], isRecording = false;
     let _readerScrollVerse = null;
     let timerMode = 'plan'; // 'plan' or 'freestyle'
+    
     let reelsVerses = [];
     let reelsCurrentIdx = 0;
     let currentReelRef = null;
+    let _selectedReelVerse = null;
 
     // ===== INIT =====
     function init() {
@@ -1549,8 +1566,9 @@
         container.innerHTML = '<div class="reel-slide" style="background:#000;"><div class="reel-verse-text"><span class="loading-dots">Loading</span></div></div>';
         reelsVerses = [];
         reelsCurrentIdx = 0;
-        // Load a few chapters worth of verses
-        for (let ch = startChapter; ch <= startChapter + 2; ch++) {
+        let allVerses = [];
+
+        for (let ch = startChapter; ch <= startChapter + 4; ch++) {
             const book = bibleBooks.find(b => b.name === bookName);
             if (!book || ch > book.chapters) break;
             try {
@@ -1558,64 +1576,100 @@
                 const data = await res.json();
                 if (data.error) continue;
                 let content = data.content || '';
-                content = content.replace(/<\/?[^>]+(>|$)/g, ' ');
-                content = content.replace(/\s+/g, ' ').trim();
-                // Split into verse-like chunks
-                const sentences = content.match(/[^.!?]+[.!?]+/g) || [content];
-                let verseNum = 1;
-                // Group sentences into verse-sized chunks (2-3 sentences each)
-                for (let i = 0; i < sentences.length; i += 2) {
-                    const chunk = sentences.slice(i, i + 2).join(' ').trim();
-                    if (chunk.length > 10) {
-                        reelsVerses.push({
-                            text: chunk,
-                            book: bookName,
-                            chapter: ch,
-                            verse: verseNum++,
-                            ref: `${bookName} ${ch}:${verseNum}`
-                        });
+                const hasMarkers = /<span[^>]*data-number="\d+"/.test(content);
+
+                if (hasMarkers) {
+                    content = content.replace(/<span[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g, '||V:$1||');
+                    content = content.replace(/<\/?[^>]+(>|$)/g, ' ');
+                    content = content.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+                    const parts = content.split(/\|\|V:(\d+)\|\|/);
+                    for (let i = 1; i < parts.length; i += 2) {
+                        const vn = parseInt(parts[i]);
+                        const vt = (parts[i + 1] || '').trim();
+                        if (vt.length > 3) allVerses.push({ text: vt, book: bookName, chapter: ch, verse: vn });
+                    }
+                } else {
+                    content = content.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/&nbsp;/g, ' ').trim();
+                    const sentences = content.match(/[^.!?]+[.!?]+/g) || [content];
+                    let vn = 1;
+                    for (const s of sentences) {
+                        const t = s.trim();
+                        if (t.length > 10) allVerses.push({ text: t, book: bookName, chapter: ch, verse: vn++ });
                     }
                 }
             } catch(e) { console.error('Reels load error:', e); }
         }
-        if (reelsVerses.length === 0) {
+
+        if (allVerses.length === 0) {
             container.innerHTML = '<div class="reel-slide" style="background:#000;"><div class="reel-verse-text">Could not load scripture. Try a different book.</div></div>';
             return;
         }
+
+        const VPS = 6;
+        for (let i = 0; i < allVerses.length; i += VPS) {
+            const group = allVerses.slice(i, i + VPS);
+            const first = group[0], last = group[group.length - 1];
+            reelsVerses.push({
+                verses: group,
+                book: first.book,
+                chapter: first.chapter,
+                startVerse: first.verse,
+                endVerse: last.verse,
+                endChapter: last.chapter,
+                ref: first.chapter === last.chapter
+                    ? `${first.book} ${first.chapter}:${first.verse}\u2013${last.verse}`
+                    : `${first.book} ${first.chapter}:${first.verse} \u2014 ${last.chapter}:${last.verse}`
+            });
+        }
+
         renderReels();
-        // Save position
         state.reels.position = { book: bookName, chapter: startChapter };
         saveState();
     }
 
     function renderReels() {
         const container = document.getElementById('reelsContainer');
-        container.innerHTML = reelsVerses.map((v, i) => {
+        container.innerHTML = reelsVerses.map((slide, i) => {
             const bg = reelBgs[i % reelBgs.length];
-            const reelId = `${v.book}_${v.chapter}_${v.verse}`;
+            const reelId = `${slide.book}_${slide.chapter}_${slide.startVerse}`;
             const isLiked = state.reels.likes[reelId];
             const commentCount = (state.reels.comments[reelId] || []).length;
+
+            const versesHtml = slide.verses.map((v, vi) =>
+                `<span class="reel-verse-line" onclick="onReelVerseTap(${i},${vi},event)" data-slide="${i}" data-vidx="${vi}"><span class="reel-v-num">${v.verse}</span>${v.text} </span>`
+            ).join('');
+
             return `<div class="reel-slide" data-reel-idx="${i}" style="background:${bg};">
                 <div class="reel-bg" style="background:${bg};"></div>
-                <div class="reel-verse-text">"${v.text}"</div>
-                <div class="reel-reference">${v.book} ${v.chapter}:${v.verse}<small>${currentBibleVersion}</small></div>
+                <div class="reel-verse-text">${versesHtml}</div>
+                <div class="reel-reference">${slide.ref}<small>${currentBibleVersion}</small></div>
                 <div class="reel-actions">
                     <div class="reel-action-btn ${isLiked?'liked':''}" onclick="toggleReelLike(${i})">
-                        <span class="reel-heart-icon">${isLiked?'❤️':'🤍'}</span>
+                        <span class="reel-heart-icon">${isLiked?'\u2764\uFE0F':'\uD83E\uDD0D'}</span>
                     </div>
                     <div class="reel-action-btn" onclick="openReelComments(${i})">
-                        💬<span>${commentCount||''}</span>
-                    </div>
-                    <div class="reel-action-btn" onclick="askAIAboutReel(${i})">
-                        🔮
+                        \uD83D\uDCAC<span>${commentCount||''}</span>
                     </div>
                     <div class="reel-action-btn" onclick="shareReelText(${i})">
-                        📤
+                        \uD83D\uDCE4
                     </div>
                 </div>
             </div>`;
         }).join('');
-        // Scroll observer
+
+        // Clear selection on scroll
+        container.addEventListener('scroll', function reelScroll() {
+            clearReelVerseSelection();
+        }, { passive: true });
+
+        // Clear selection when tapping non-verse areas
+        container.onclick = function(e) {
+            if (!e.target.closest('.reel-verse-line') && !e.target.closest('.reel-action-btn') && !e.target.closest('.ask-ai-tooltip')) {
+                clearReelVerseSelection();
+            }
+        };
+
+        // Scroll observer for tracking views
         const slides = container.querySelectorAll('.reel-slide');
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(e => {
@@ -1631,28 +1685,58 @@
         slides.forEach(s => observer.observe(s));
     }
 
+    function onReelVerseTap(slideIdx, verseIdx, event) {
+        event.stopPropagation();
+        const slide = reelsVerses[slideIdx];
+        if (!slide || !slide.verses[verseIdx]) return;
+        const v = slide.verses[verseIdx];
+
+        // Clear previous
+        document.querySelectorAll('.reel-verse-line.reel-verse-selected').forEach(el => el.classList.remove('reel-verse-selected'));
+
+        // Highlight tapped verse
+        const el = event.currentTarget;
+        el.classList.add('reel-verse-selected');
+        _selectedReelVerse = { slideIdx, verseIdx, verse: v };
+
+        // Show Ask AI tooltip near the verse
+        const tooltip = document.getElementById('askAiTooltip');
+        const rect = el.getBoundingClientRect();
+        tooltip.style.left = Math.min(rect.left + rect.width / 2 - 50, window.innerWidth - 130) + 'px';
+        tooltip.style.top = Math.max(10, rect.top - 42) + 'px';
+        tooltip.textContent = `Ask AI \u00B7 v${v.verse} \u2728`;
+        tooltip.classList.add('show', 'reels-context');
+    }
+
+    function clearReelVerseSelection() {
+        _selectedReelVerse = null;
+        document.querySelectorAll('.reel-verse-line.reel-verse-selected').forEach(el => el.classList.remove('reel-verse-selected'));
+        const tooltip = document.getElementById('askAiTooltip');
+        if (tooltip && tooltip.classList.contains('reels-context')) {
+            tooltip.classList.remove('show', 'reels-context');
+        }
+    }
+
     function trackReelView(idx) {
         if (!reelsVerses[idx]) return;
-        const v = reelsVerses[idx];
+        const slide = reelsVerses[idx];
         state.scrollsViewed = (state.scrollsViewed || 0) + 1;
-        const entry = { book: v.book, chapter: v.chapter, verse: v.verse, date: new Date().toISOString(), liked: !!state.reels.likes[`${v.book}_${v.chapter}_${v.verse}`] };
-        // Avoid duplicate consecutive entries
+        const entry = { book: slide.book, chapter: slide.chapter, verse: slide.startVerse, date: new Date().toISOString(), liked: !!state.reels.likes[`${slide.book}_${slide.chapter}_${slide.startVerse}`] };
         const last = state.reels.history[state.reels.history.length - 1];
         if (!last || last.book !== entry.book || last.chapter !== entry.chapter || last.verse !== entry.verse) {
             state.reels.history.push(entry);
         }
-        state.reels.position = { book: v.book, chapter: v.chapter, verseIdx: idx };
+        state.reels.position = { book: slide.book, chapter: slide.chapter, verseIdx: idx };
         saveState();
     }
 
     function toggleReelLike(idx) {
         if (!reelsVerses[idx]) return;
-        const v = reelsVerses[idx];
-        const reelId = `${v.book}_${v.chapter}_${v.verse}`;
+        const slide = reelsVerses[idx];
+        const reelId = `${slide.book}_${slide.chapter}_${slide.startVerse}`;
         state.reels.likes[reelId] = !state.reels.likes[reelId];
         saveState();
         renderReels();
-        // Scroll back to position
         const slides = document.querySelectorAll('.reel-slide');
         if (slides[idx]) slides[idx].scrollIntoView({ behavior: 'instant' });
     }
@@ -1660,8 +1744,8 @@
     function openReelComments(idx) {
         if (!reelsVerses[idx]) return;
         currentReelRef = idx;
-        const v = reelsVerses[idx];
-        const reelId = `${v.book}_${v.chapter}_${v.verse}`;
+        const slide = reelsVerses[idx];
+        const reelId = `${slide.book}_${slide.chapter}_${slide.startVerse}`;
         const comments = state.reels.comments[reelId] || [];
         const list = document.getElementById('reelCommentsList');
         if (comments.length === 0) {
@@ -1688,8 +1772,8 @@
         const input = document.getElementById('reelCommentInput');
         const text = input.value.trim();
         if (!text) return;
-        const v = reelsVerses[currentReelRef];
-        const reelId = `${v.book}_${v.chapter}_${v.verse}`;
+        const slide = reelsVerses[currentReelRef];
+        const reelId = `${slide.book}_${slide.chapter}_${slide.startVerse}`;
         if (!state.reels.comments[reelId]) state.reels.comments[reelId] = [];
         state.reels.comments[reelId].push({ text, date: new Date().toISOString() });
         saveState();
@@ -1702,20 +1786,21 @@
 
     function askAIAboutReel(idx) {
         if (!reelsVerses[idx]) return;
-        const v = reelsVerses[idx];
+        const slide = reelsVerses[idx];
+        const fullText = slide.verses.map(v => `[${v.verse}] ${v.text}`).join(' ');
         closeReelComments();
         switchTab('chat-tab');
         setTimeout(() => {
-            const chatInput = document.getElementById('chatInput');
-            chatInput.value = `Explain ${v.book} ${v.chapter}:${v.verse} — "${v.text}"`;
+            document.getElementById('chatInput').value = `Explain ${slide.ref}: "${fullText.substring(0, 300)}${fullText.length > 300 ? '...' : ''}"`;
             sendChatMessage();
         }, 400);
     }
 
     function shareReelText(idx) {
         if (!reelsVerses[idx]) return;
-        const v = reelsVerses[idx];
-        const text = `"${v.text}" — ${v.book} ${v.chapter}:${v.verse} (${currentBibleVersion})`;
+        const slide = reelsVerses[idx];
+        const fullText = slide.verses.map(v => v.text).join(' ');
+        const text = `"${fullText}" \u2014 ${slide.ref} (${currentBibleVersion})`;
         if (navigator.share) {
             navigator.share({ text }).catch(() => {});
         } else {
@@ -2036,8 +2121,22 @@
         const tooltip = document.getElementById('askAiTooltip');
         const wasInReels = tooltip.classList.contains('reels-context');
         tooltip.classList.remove('show', 'reels-context');
+
+        // Handle per-verse reel tap
+        if (_selectedReelVerse) {
+            const v = _selectedReelVerse.verse;
+            clearReelVerseSelection();
+            switchTab('chat-tab');
+            setTimeout(() => {
+                document.getElementById('chatInput').value = `Explain ${v.book} ${v.chapter}:${v.verse} \u2014 "${v.text}"`;
+                sendChatMessage();
+            }, 400);
+            return;
+        }
+
         if (document.getElementById('bible-reader')?.classList.contains('active'))
             saveReaderPosition();
+
         if (selectedVerses.size > 0) {
             const arr = Array.from(selectedVerses).map(Number).sort((a,b)=>a-b);
             const bookName = document.getElementById('bibleBookSelect').value;
@@ -2053,8 +2152,8 @@
         } else if (selectedHighlightText) {
             let prompt;
             if (wasInReels && reelsVerses[reelsCurrentIdx]) {
-                const v = reelsVerses[reelsCurrentIdx];
-                prompt = `Explain this from ${v.book} ${v.chapter} — "${selectedHighlightText}"`;
+                const slide = reelsVerses[reelsCurrentIdx];
+                prompt = `Explain this from ${slide.ref} \u2014 "${selectedHighlightText}"`;
             } else {
                 prompt = `Explain this passage: "${selectedHighlightText}"`;
             }
